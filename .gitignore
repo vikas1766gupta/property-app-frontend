@@ -1,2 +1,10 @@
 /node_modules/
 /dist/
+/.angular/
+/coverage/
+.env*
+!.env.example
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db

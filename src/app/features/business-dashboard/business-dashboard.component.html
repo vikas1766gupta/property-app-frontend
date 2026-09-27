@@ -3,59 +3,116 @@
     <h1>Your listings</h1>
     <div class="header-actions">
       <span class="free-counter">{{ freeRemaining() }} free listings left</span>
-      <button class="btn primary" (click)="openCreateForm()">+ New listing</button>
-      <button class="btn" (click)="logout()">Log out</button>
+      <button uiButton="primary" type="button" (click)="openCreateForm()">+ New listing</button>
+      <button uiButton type="button" (click)="logout()">Log out</button>
     </div>
   </header>
+  <ui-toast [message]="freeRemainingError()" tone="error" />
+  <ui-toast [message]="actionError()" tone="error" />
 
   <!-- Create listing form -->
-  <div class="create-form" *ngIf="showCreateForm()">
+  <ui-card class="create-form" *ngIf="showCreateForm()">
     <h3>{{ editingPropertyId() ? 'Edit listing' : 'New listing' }}</h3>
     <div class="form-grid">
-      <select [(ngModel)]="form.listingType">
+      <select uiInput [(ngModel)]="form.listingType">
         <option value="RENT">For Rent</option>
         <option value="SALE">For Sale</option>
       </select>
-      <input type="text" placeholder="Title" [(ngModel)]="form.title" />
-      <input type="number" placeholder="Price" [(ngModel)]="form.price" />
-      <input type="text" placeholder="Address" [(ngModel)]="form.addressLine" />
-      <input type="text" placeholder="City" [(ngModel)]="form.city" />
-      <input type="text" placeholder="State" [(ngModel)]="form.state" />
-      <input type="text" placeholder="Country" [(ngModel)]="form.country" />
-      <input type="number" placeholder="Bedrooms" [(ngModel)]="form.bedrooms" />
-      <input type="number" placeholder="Bathrooms" [(ngModel)]="form.bathrooms" />
-      <input type="number" placeholder="Area (sqft)" [(ngModel)]="form.areaSqft" />
-      <input type="text" placeholder="Furnishing status" [(ngModel)]="form.furnishingStatus" />
-      <input type="text" placeholder="Amenities (comma separated)" [(ngModel)]="form.amenities" />
-      <input type="text" placeholder="Image URLs (comma separated)" [(ngModel)]="form.imageUrls" />
+      <input uiInput type="text" placeholder="Title" minlength="5" maxlength="150" required [(ngModel)]="form.title" />
+      <input uiInput type="number" placeholder="Price" min="0.01" required [(ngModel)]="form.price" />
+      <input uiInput type="text" placeholder="Address" minlength="3" required [(ngModel)]="form.addressLine" />
+      <input uiInput type="text" placeholder="City" minlength="2" required [(ngModel)]="form.city" />
+      <input uiInput type="text" placeholder="State" minlength="2" required [(ngModel)]="form.state" />
+      <input uiInput type="text" placeholder="Country" minlength="2" required [(ngModel)]="form.country" />
+      <input uiInput type="number" placeholder="Bedrooms" min="0" step="1" [(ngModel)]="form.bedrooms" />
+      <input uiInput type="number" placeholder="Bathrooms" min="0" step="1" [(ngModel)]="form.bathrooms" />
+      <input uiInput type="number" placeholder="Area (sqft)" min="1" step="1" [(ngModel)]="form.areaSqft" />
+      <input uiInput type="text" placeholder="Furnishing status" [(ngModel)]="form.furnishingStatus" />
+      <input uiInput type="text" placeholder="Amenities (comma separated)" [(ngModel)]="form.amenities" />
     </div>
-    <textarea placeholder="Description" rows="3" [(ngModel)]="form.description"></textarea>
-    <p class="form-error" *ngIf="listingError()" role="alert">{{ listingError() }}</p>
+    <section class="location-section" aria-labelledby="listing-location-heading">
+      <h4 id="listing-location-heading">Map location (optional)</h4>
+      <app-location-picker
+        [latitude]="form.latitude ?? null"
+        [longitude]="form.longitude ?? null"
+        (locationChange)="onLocationChange($event)"
+      />
+    </section>
+    <section class="image-upload-section" aria-labelledby="listing-images-heading">
+      <h4 id="listing-images-heading">Listing images</h4>
+      <label
+        class="image-dropzone"
+        [class.drag-active]="imageDragActive()"
+        (dragover)="onImageDragOver($event)"
+        (dragleave)="onImageDragLeave($event)"
+        (drop)="onImageDrop($event)"
+      >
+        <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="onImageFilesSelected($event)" />
+        <span>Drop images here or choose files</span>
+        <small>JPEG, PNG, or WebP. Up to 8 MB each, 20 images per listing.</small>
+      </label>
+      <ui-toast [message]="imageUploadError()" tone="error" />
+      <div class="image-draft-grid" *ngIf="imageDrafts().length">
+        <article class="image-draft" *ngFor="let image of imageDrafts(); let i = index">
+          <img [src]="image.previewUrl" [alt]="image.name" />
+          <div class="image-draft-details">
+            <strong>{{ image.name }}</strong>
+            <progress *ngIf="image.uploading" max="100" [value]="image.progress" [attr.aria-label]="'Uploading ' + image.name"></progress>
+            <span *ngIf="image.uploading" aria-live="polite">Uploading {{ image.progress }}%</span>
+            <p class="form-error" *ngIf="image.error" role="alert">{{ image.error }}</p>
+            <div class="image-draft-actions">
+              <button uiButton="quiet" type="button" (click)="moveImage(i, -1)" [disabled]="i === 0" aria-label="Move image earlier">Move up</button>
+              <button uiButton="quiet" type="button" (click)="moveImage(i, 1)" [disabled]="i === imageDrafts().length - 1" aria-label="Move image later">Move down</button>
+              <label class="cover-choice">
+                <input type="radio" name="coverImage" [checked]="image.isCover" [disabled]="!image.uploadId || image.uploading" (change)="setCoverImage(image.key)" />
+                Cover
+              </label>
+              <button uiButton="quiet" type="button" *ngIf="image.error" (click)="retryImageUpload(image.key)">Retry</button>
+              <button uiButton="danger" type="button" (click)="removeImage(image.key)" [disabled]="image.uploading">Remove</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+    <textarea uiInput placeholder="Description" rows="3" minlength="20" required [(ngModel)]="form.description"></textarea>
+    <p class="form-error" *ngIf="!isListingDetailsValid()" role="status">
+      Enter a valid title, description, price, address, city, state, and country before saving.
+    </p>
+    <ui-toast [message]="listingError()" tone="error" />
     <div class="form-actions">
-      <button class="btn" (click)="cancelListingForm()" [disabled]="savingListing()">Cancel</button>
-      <button class="btn primary" (click)="createListing()" [disabled]="savingListing()">
+      <button uiButton type="button" (click)="cancelListingForm()" [disabled]="savingListing()">Cancel</button>
+      <button uiButton="primary" type="button" (click)="createListing()" [disabled]="!canSaveListing()">
         {{ savingListing() ? 'Saving…' : editingPropertyId() ? 'Save changes' : 'Save listing' }}
       </button>
     </div>
-  </div>
+  </ui-card>
 
   <!-- Stripe checkout for listings past the free tier -->
-  <div class="checkout-modal" *ngIf="showCheckout()">
+  <ui-modal [open]="showCheckout()" labelledBy="checkout-title" (closed)="cancelCheckout()">
     <div class="checkout-box">
-      <h3>Complete payment to publish this listing</h3>
+      <h2 id="checkout-title">Complete payment to publish this listing</h2>
       <div #cardElementRef class="card-element"></div>
-      <div class="error" *ngIf="checkoutError()">{{ checkoutError() }}</div>
+      <ui-toast [message]="checkoutError()" tone="error" />
       <div class="form-actions">
-        <button class="btn" (click)="cancelCheckout()">Cancel</button>
-        <button class="btn primary" (click)="confirmPayment()" [disabled]="checkoutProcessing()">
+        <button uiButton type="button" (click)="cancelCheckout()">Cancel</button>
+        <button uiButton="primary" type="button" (click)="confirmPayment()" [disabled]="checkoutProcessing()">
           {{ checkoutProcessing() ? 'Processing…' : 'Pay & publish' }}
         </button>
       </div>
     </div>
-  </div>
+  </ui-modal>
 
   <!-- Listings table -->
-  <table *ngIf="!loading(); else loadingTpl">
+  <ui-toast [message]="listingLoadError()" tone="error" />
+  <ui-skeleton *ngIf="loading()" variant="row" [count]="5" label="Loading listings" />
+  <ui-empty-state
+    *ngIf="!loading() && !listingLoadError() && listings().length === 0"
+    mark="⌂"
+    title="No listings yet"
+    description="Create a property listing to start showing your inventory to buyers."
+  />
+  <div class="table-scroll" *ngIf="!loading() && !listingLoadError() && listings().length > 0">
+  <table>
     <thead>
       <tr>
         <th>Title</th>
@@ -72,29 +129,28 @@
         <td>{{ p.currency }} {{ p.price | number }}</td>
         <td><span class="badge" [ngClass]="p.status?.toLowerCase()">{{ p.status }}</span></td>
         <td class="listing-actions">
-          <button class="btn" *ngIf="p.status !== 'REMOVED'" (click)="editListing(p)">Edit</button>
+          <button uiButton="quiet" type="button" *ngIf="p.status !== 'REMOVED'" (click)="editListing(p)">Edit</button>
           <button
-            class="btn primary"
+            uiButton="primary"
+            type="button"
             *ngIf="p.status === 'PENDING_PAYMENT'"
             (click)="openCheckout(p.id)"
           >
             Pay to publish
           </button>
-          <button class="btn danger" (click)="deleteListing(p.id)">Delete</button>
+          <button uiButton="danger" type="button" (click)="deleteListing(p.id)">Delete</button>
         </td>
       </tr>
     </tbody>
   </table>
-  <ng-template #loadingTpl><p>Loading…</p></ng-template>
+  </div>
 
   <section class="leads-section" aria-labelledby="leads-heading">
     <h2 id="leads-heading">Property inquiries <span>{{ leads().length }}</span></h2>
-    <p class="leads-error" *ngIf="leadsError()" role="alert">{{ leadsError() }}</p>
-    <p *ngIf="leadsLoading()" aria-live="polite">Loading inquiries…</p>
-    <p *ngIf="!leadsLoading() && !leadsError() && leads().length === 0" class="leads-empty">
-      No inquiries yet.
-    </p>
-    <div class="leads-table-wrap" *ngIf="!leadsLoading() && leads().length > 0">
+    <ui-toast [message]="leadsError()" tone="error" />
+    <ui-skeleton *ngIf="leadsLoading()" variant="row" [count]="3" label="Loading inquiries" />
+    <ui-empty-state *ngIf="!leadsLoading() && !leadsError() && leads().length === 0" mark="↗" title="No inquiries yet" description="Buyer messages for your listings will appear here." />
+    <div class="leads-table-wrap" *ngIf="!leadsLoading() && !leadsError() && leads().length > 0">
       <table>
         <thead>
           <tr>
@@ -119,6 +175,10 @@
   </section>
 
   <h2 class="payments-heading">Payment history</h2>
+  <ui-toast [message]="paymentsError()" tone="error" />
+  <ui-skeleton *ngIf="paymentsLoading()" variant="row" [count]="3" label="Loading payment history" />
+  <ui-empty-state *ngIf="!paymentsLoading() && !paymentsError() && payments().length === 0" mark="◷" title="No payments yet" description="Payments for listings beyond your free allowance will appear here." />
+  <div class="table-scroll" *ngIf="!paymentsLoading() && !paymentsError() && payments().length > 0">
   <table>
     <thead>
       <tr>
@@ -135,4 +195,5 @@
       </tr>
     </tbody>
   </table>
+  </div>
 </div>

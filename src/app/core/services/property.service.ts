@@ -1,8 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpParams, HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Property, PropertySearchFilters, PropertySearchResult } from '../../shared/models/property.model';
+import { Property, PropertyImageInput, PropertyNotification, PropertySearchFilters, PropertySearchResult, SavedSearch, SavedSearchFilters } from '../../shared/models/property.model';
+
+export interface UploadedPropertyImage {
+  id: string;
+  url: string;
+}
+
+type PropertyMutation = Omit<Partial<Property>, 'imageRefs'> & { imageRefs?: PropertyImageInput[] };
 
 @Injectable({ providedIn: 'root' })
 export class PropertyService {
@@ -27,11 +34,22 @@ export class PropertyService {
     return this.http.get<Property[]>(`${this.baseUrl}/mine/all`);
   }
 
-  create(payload: Partial<Property>): Observable<{ property: Property; requiresPayment: boolean }> {
+  uploadImage(file: File): Observable<HttpEvent<UploadedPropertyImage>> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return this.http.request<UploadedPropertyImage>(new HttpRequest(
+      'POST',
+      `${this.baseUrl}/images/upload`,
+      formData,
+      { reportProgress: true },
+    ));
+  }
+
+  create(payload: PropertyMutation): Observable<{ property: Property; requiresPayment: boolean }> {
     return this.http.post<{ property: Property; requiresPayment: boolean }>(this.baseUrl, payload);
   }
 
-  update(id: string, payload: Partial<Property>): Observable<Property> {
+  update(id: string, payload: PropertyMutation): Observable<Property> {
     return this.http.patch<Property>(`${this.baseUrl}/${id}`, payload);
   }
 
@@ -41,5 +59,21 @@ export class PropertyService {
 
   freeListingsRemaining(): Observable<{ remaining: number }> {
     return this.http.get<{ remaining: number }>(`${this.baseUrl}/mine/free-remaining`);
+  }
+
+  listSavedSearches(): Observable<SavedSearch[]> {
+    return this.http.get<SavedSearch[]>(`${this.baseUrl}/saved-searches`);
+  }
+
+  createSavedSearch(input: { name: string; filters: SavedSearchFilters; notifyOnMatch: boolean }): Observable<SavedSearch> {
+    return this.http.post<SavedSearch>(`${this.baseUrl}/saved-searches`, input);
+  }
+
+  removeSavedSearch(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/saved-searches/${id}`);
+  }
+
+  listNotifications(): Observable<PropertyNotification[]> {
+    return this.http.get<PropertyNotification[]>(`${environment.apiUrl}/notifications`);
   }
 }

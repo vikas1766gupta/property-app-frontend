@@ -15,6 +15,7 @@ import { AuthService } from './core/auth/auth.service';
         <a routerLink="/properties">Browse</a>
         <ng-container *ngIf="auth.isLoggedIn(); else loggedOut">
           <a *ngIf="auth.getRole() === 'BUSINESS'" routerLink="/dashboard">Dashboard</a>
+          <a *ngIf="auth.getRole() === 'BUYER'" routerLink="/saved">Saved properties</a>
           <a *ngIf="auth.getRole() === 'ADMIN'" routerLink="/admin">Admin</a>
         </ng-container>
         <ng-template #loggedOut>
@@ -30,23 +31,36 @@ import { AuthService } from './core/auth/auth.service';
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.9rem 1.2rem;
-        background: #fff;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        gap: var(--space-4);
+        min-height: 4.25rem;
+        padding: var(--space-3) max(var(--space-4), calc((100vw - 78rem) / 2));
+        border-bottom: 1px solid var(--color-line);
+        background: var(--color-surface);
       }
       .brand {
-        font-weight: 700;
+        color: var(--color-ink);
+        font: 400 var(--text-lg) var(--font-display);
         text-decoration: none;
-        color: #1a1a2e;
+        white-space: nowrap;
       }
       .nav-links {
         display: flex;
-        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--space-2) var(--space-5);
       }
       .nav-links a {
         text-decoration: none;
-        color: #444;
-        font-size: 0.9rem;
+        color: var(--color-muted);
+        font-size: var(--text-sm);
+        font-weight: 600;
+      }
+      .nav-links a:hover {
+        color: var(--color-brand);
+      }
+      @media (max-width: 480px) {
+        .top-nav { align-items: flex-start; flex-direction: column; gap: var(--space-2); }
+        .nav-links { justify-content: flex-start; gap: var(--space-2) var(--space-4); }
       }
     `,
   ],

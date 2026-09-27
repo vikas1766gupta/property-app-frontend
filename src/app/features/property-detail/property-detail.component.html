@@ -1,3 +1,6 @@
+<ui-skeleton *ngIf="loading()" variant="detail" label="Loading property details" />
+<ui-empty-state *ngIf="!loading() && propertyError()" mark="⌕" title="Property unavailable" [description]="propertyError()!" />
+
 <div class="detail-page" *ngIf="!loading() && property() as p">
   <div class="gallery">
     <div class="gallery-stage" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
@@ -7,6 +10,7 @@
         class="main-image"
       />
       <button
+        uiButton="quiet"
         type="button"
         class="gallery-arrow previous"
         *ngIf="p.images.length > 1"
@@ -16,6 +20,7 @@
         &#8249;
       </button>
       <button
+        uiButton="quiet"
         type="button"
         class="gallery-arrow next"
         *ngIf="p.images.length > 1"
@@ -30,6 +35,7 @@
     </div>
     <div class="thumbs" *ngIf="p.images.length > 1">
       <button
+        uiButton="quiet"
         *ngFor="let img of p.images; let i = index"
         type="button"
         [class.active]="i === activeImage()"
@@ -44,7 +50,21 @@
 
   <div class="info">
     <div class="price">{{ p.currency }} {{ p.price | number }}<span *ngIf="p.listingType === 'RENT'">/mo</span></div>
-    <h1>{{ p.title }}</h1>
+    <div class="detail-heading">
+      <h1>{{ p.title }}</h1>
+      <button
+        uiButton="quiet"
+        type="button"
+        class="favorite-toggle"
+        *ngIf="auth.getRole() === 'BUYER'"
+        [class.is-favorite]="favoriteService.isFavorited(p.id)"
+        [disabled]="favoriteService.isPending(p.id) || favoriteService.loading()"
+        [attr.aria-pressed]="favoriteService.isFavorited(p.id)"
+        [attr.aria-label]="favoriteService.isFavorited(p.id) ? 'Remove ' + p.title + ' from saved properties' : 'Save ' + p.title"
+        (click)="toggleFavorite(p)"
+      ><span aria-hidden="true">{{ favoriteService.isFavorited(p.id) ? '♥' : '♡' }}</span></button>
+    </div>
+    <ui-toast [message]="favoriteError()" tone="error" />
     <div class="location">{{ p.addressLine }}, {{ p.city }}, {{ p.state }}</div>
 
     <div class="stats" *ngIf="p.bedrooms || p.areaSqft">
@@ -65,18 +85,16 @@
       Map location: {{ p.latitude }}, {{ p.longitude }}
     </div>
 
-    <div class="lead-form" *ngIf="!leadSent()">
+    <ui-card class="lead-form" *ngIf="!leadSent()">
       <h3>Contact the business</h3>
-      <input type="text" placeholder="Your name" [(ngModel)]="leadName" name="leadName" />
-      <input type="text" placeholder="Phone or email" [(ngModel)]="leadContact" name="leadContact" />
-      <textarea placeholder="I'm interested in this property…" [(ngModel)]="leadMessage" name="leadMessage"></textarea>
-      <div class="error" *ngIf="leadError()">{{ leadError() }}</div>
-      <button class="btn primary" (click)="submitLead()" [disabled]="leadSubmitting()">
+      <label>Your name<input uiInput type="text" placeholder="Your name" [(ngModel)]="leadName" name="leadName" /></label>
+      <label>Phone or email<input uiInput type="text" placeholder="Phone or email" [(ngModel)]="leadContact" name="leadContact" /></label>
+      <label>Message<textarea uiInput placeholder="I'm interested in this property…" [(ngModel)]="leadMessage" name="leadMessage"></textarea></label>
+      <ui-toast [message]="leadError()" tone="error" />
+      <button uiButton="primary" type="button" (click)="submitLead()" [disabled]="leadSubmitting()">
         {{ leadSubmitting() ? 'Sending…' : 'Send inquiry' }}
       </button>
-    </div>
-    <div class="lead-sent" *ngIf="leadSent()">Your inquiry has been sent to the business.</div>
+    </ui-card>
+    <ui-toast *ngIf="leadSent()" tone="success" message="Your inquiry has been sent to the business." />
   </div>
 </div>
-
-<div class="skeleton-detail" *ngIf="loading()"></div>

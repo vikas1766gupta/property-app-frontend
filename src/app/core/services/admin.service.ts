@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { Property } from '../../shared/models/property.model';
 
 export interface BusinessRecord {
   id: string;
@@ -15,6 +14,21 @@ export interface RevenueRow {
   status: string;
   _sum: { amount: number | null };
   _count: number;
+}
+
+export interface PricingConfig {
+  freeListingLimit: number;
+  pricePerListing: number;
+  currency: string;
+}
+
+export interface AdminListingRecord {
+  id: string;
+  title: string;
+  city: string;
+  price: number;
+  currency: string;
+  status: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -31,22 +45,26 @@ export class AdminService {
   }
 
   listAllListings() {
-    return this.http.get<Property[]>(`${this.baseUrl}/listings`);
+    return this.http.get<AdminListingRecord[]>(`${this.baseUrl}/listings`);
   }
 
   flagListing(id: string) {
-    return this.http.patch<Property>(`${this.baseUrl}/listings/${id}/flag`, {});
+    return this.http.patch<AdminListingRecord>(`${this.baseUrl}/listings/${id}/flag`, {});
   }
 
   removeListing(id: string) {
-    return this.http.patch<Property>(`${this.baseUrl}/listings/${id}/remove`, {});
+    return this.http.patch<AdminListingRecord>(`${this.baseUrl}/listings/${id}/remove`, {});
   }
 
   revenueReport() {
     return this.http.get<RevenueRow[]>(`${this.baseUrl}/reports/revenue`);
   }
 
-  updatePricing(freeListingLimit: number, pricePerListing: number) {
-    return this.http.patch(`${this.baseUrl}/pricing`, { freeListingLimit, pricePerListing });
+  getPricing() {
+    return this.http.get<PricingConfig>(`${this.baseUrl}/pricing`);
+  }
+
+  updatePricing(config: PricingConfig) {
+    return this.http.patch<PricingConfig>(`${this.baseUrl}/pricing`, config);
   }
 }

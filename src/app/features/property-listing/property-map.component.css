@@ -1,0 +1,27 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.property-map {
+  width: 100%;
+  height: min(68vh, 48rem);
+  min-height: 24rem;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+}
+
+.map-caption {
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 600px) {
+  .property-map {
+    height: 62vh;
+    min-height: 20rem;
+  }
+}

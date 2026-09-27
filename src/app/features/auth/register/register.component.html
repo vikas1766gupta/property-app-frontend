@@ -1,29 +1,35 @@
-<div class="auth-form">
-  <h2>Register your business</h2>
+<main class="auth-page">
+  <ui-card class="auth-form">
+    <p class="eyebrow">LIST YOUR PROPERTY</p>
+    <h1>Build your business presence</h1>
+    <p class="auth-copy">Create an account to publish and manage property listings.</p>
 
-  <label>
-    Company name
-    <input type="text" [(ngModel)]="companyName" name="companyName" />
-  </label>
+    <label>
+      Company name
+      <input uiInput type="text" [(ngModel)]="companyName" name="companyName" autocomplete="organization" required />
+    </label>
 
-  <label>
-    Email
-    <input type="email" [(ngModel)]="email" name="email" />
-  </label>
+    <label>
+      Email
+      <input uiInput type="email" [(ngModel)]="email" name="email" autocomplete="email" required />
+    </label>
 
-  <label>
-    Phone (optional)
-    <input type="tel" [(ngModel)]="contactPhone" name="contactPhone" />
-  </label>
+    <label>
+      Phone (optional)
+      <input uiInput type="tel" [(ngModel)]="contactPhone" name="contactPhone" autocomplete="tel" />
+    </label>
 
-  <label>
-    Password
-    <input type="password" [(ngModel)]="password" name="password" />
-  </label>
+    <label>
+      Password
+      <input uiInput type="password" [(ngModel)]="password" name="password" autocomplete="new-password" required />
+    </label>
 
-  <div class="error" *ngIf="error()">{{ error() }}</div>
+    <ui-toast [message]="error()" tone="error" />
 
-  <button (click)="submit()" [disabled]="loading()">{{ loading() ? 'Creating account…' : 'Create account' }}</button>
+    <button uiButton="primary" type="button" (click)="submit()" [disabled]="loading()">
+      {{ loading() ? 'Creating account…' : 'Create account' }}
+    </button>
 
-  <p>Already registered? <a routerLink="/login">Log in</a></p>
-</div>
+    <p class="auth-switch">Already registered? <a routerLink="/login">Log in</a></p>
+  </ui-card>
+</main>

@@ -3,11 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { UiButtonDirective } from '../../../shared/ui/button.directive';
+import { UiCardComponent } from '../../../shared/ui/card.component';
+import { UiInputDirective } from '../../../shared/ui/input.directive';
+import { UiToastComponent } from '../../../shared/ui/toast.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, UiButtonDirective, UiCardComponent, UiInputDirective, UiToastComponent],
   templateUrl: './login.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

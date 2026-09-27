@@ -1,77 +1,102 @@
-<div class="section">
+<main class="section admin-page">
   <header class="dash-header">
-    <h1>Admin</h1>
-    <button class="btn" (click)="logout()">Log out</button>
+    <div>
+      <p class="eyebrow">OPERATIONS</p>
+      <h1>Admin console</h1>
+    </div>
+    <button uiButton type="button" (click)="logout()">Log out</button>
   </header>
 
-  <nav class="tabs">
-    <button class="tab" [class.active]="tab() === 'businesses'" (click)="setTab('businesses')">Businesses</button>
-    <button class="tab" [class.active]="tab() === 'listings'" (click)="setTab('listings')">Listings</button>
-    <button class="tab" [class.active]="tab() === 'revenue'" (click)="setTab('revenue')">Revenue</button>
-    <button class="tab" [class.active]="tab() === 'pricing'" (click)="setTab('pricing')">Pricing</button>
+  <nav class="tabs" aria-label="Admin sections">
+    <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'businesses'" [attr.aria-current]="tab() === 'businesses' ? 'page' : null" (click)="setTab('businesses')">Businesses</button>
+    <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'listings'" [attr.aria-current]="tab() === 'listings' ? 'page' : null" (click)="setTab('listings')">Listings</button>
+    <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'revenue'" [attr.aria-current]="tab() === 'revenue' ? 'page' : null" (click)="setTab('revenue')">Revenue</button>
+    <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'pricing'" [attr.aria-current]="tab() === 'pricing' ? 'page' : null" (click)="setTab('pricing')">Pricing</button>
   </nav>
 
-  <p *ngIf="loading()">Loading…</p>
+  <ui-skeleton *ngIf="loading()" variant="row" [count]="4" label="Loading admin data" />
+  <ui-toast [message]="viewError()" tone="error" />
+  <ui-toast [message]="actionError()" tone="error" />
 
-  <table *ngIf="!loading() && tab() === 'businesses'">
-    <thead>
-      <tr><th>Company</th><th>Email</th><th>Phone</th><th>Status</th><th></th></tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let b of businesses()">
-        <td>{{ b.companyName }}</td>
-        <td>{{ b.user.email }}</td>
-        <td>{{ b.contactPhone || '—' }}</td>
-        <td><span class="badge" [ngClass]="b.verificationStatus.toLowerCase()">{{ b.verificationStatus }}</span></td>
-        <td>
-          <button class="btn primary" (click)="verify(b, 'VERIFIED')" *ngIf="b.verificationStatus !== 'VERIFIED'">Approve</button>
-          <button class="btn danger" (click)="verify(b, 'REJECTED')" *ngIf="b.verificationStatus !== 'REJECTED'">Reject</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <ng-container *ngIf="!loading() && tab() === 'businesses'">
+    <ui-empty-state *ngIf="!viewError() && businesses().length === 0" mark="⌂" title="No businesses found" description="New business registrations will appear here for review." />
+    <div class="table-scroll" *ngIf="!viewError() && businesses().length > 0">
+      <table>
+        <thead><tr><th>Company</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let b of businesses()">
+            <td>{{ b.companyName }}</td>
+            <td>{{ b.user.email }}</td>
+            <td>{{ b.contactPhone || '—' }}</td>
+            <td><span class="badge" [ngClass]="b.verificationStatus.toLowerCase()">{{ b.verificationStatus }}</span></td>
+            <td class="admin-actions">
+              <button uiButton="primary" type="button" (click)="verify(b, 'VERIFIED')" *ngIf="b.verificationStatus !== 'VERIFIED'">Approve</button>
+              <button uiButton="danger" type="button" (click)="verify(b, 'REJECTED')" *ngIf="b.verificationStatus !== 'REJECTED'">Reject</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
 
-  <table *ngIf="!loading() && tab() === 'listings'">
-    <thead>
-      <tr><th>Title</th><th>City</th><th>Price</th><th>Status</th><th></th></tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let l of listings()">
-        <td>{{ l.title }}</td>
-        <td>{{ l.city }}</td>
-        <td>{{ l.currency }} {{ l.price | number }}</td>
-        <td><span class="badge" [ngClass]="l.status?.toLowerCase()">{{ l.status }}</span></td>
-        <td>
-          <button class="btn" (click)="flag(l)" *ngIf="l.status !== 'FLAGGED'">Flag</button>
-          <button class="btn danger" (click)="remove(l)" *ngIf="l.status !== 'REMOVED'">Remove</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <ng-container *ngIf="!loading() && tab() === 'listings'">
+    <ui-empty-state *ngIf="!viewError() && listings().length === 0" mark="⌂" title="No listings found" description="Published and moderated listings will appear here." />
+    <div class="table-scroll" *ngIf="!viewError() && listings().length > 0">
+      <table>
+        <thead><tr><th>Title</th><th>City</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let l of listings()">
+            <td>{{ l.title }}</td>
+            <td>{{ l.city }}</td>
+            <td>{{ l.currency }} {{ l.price | number }}</td>
+            <td><span class="badge" [ngClass]="l.status.toLowerCase()">{{ l.status }}</span></td>
+            <td class="admin-actions">
+              <button uiButton type="button" (click)="flag(l)" *ngIf="l.status !== 'FLAGGED'">Flag</button>
+              <button uiButton="danger" type="button" (click)="remove(l)" *ngIf="l.status !== 'REMOVED'">Remove</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
 
-  <table *ngIf="!loading() && tab() === 'revenue'">
-    <thead>
-      <tr><th>Status</th><th>Count</th><th>Total amount</th></tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let r of revenue()">
-        <td><span class="badge" [ngClass]="r.status.toLowerCase()">{{ r.status }}</span></td>
-        <td>{{ r._count }}</td>
-        <td>{{ r._sum.amount | number }}</td>
-      </tr>
-    </tbody>
-  </table>
+  <ng-container *ngIf="!loading() && tab() === 'revenue'">
+    <ui-empty-state *ngIf="!viewError() && revenue().length === 0" mark="◷" title="No revenue recorded" description="Payment totals will appear here after the first listing payment." />
+    <div class="table-scroll" *ngIf="!viewError() && revenue().length > 0">
+      <table>
+        <thead><tr><th>Status</th><th>Count</th><th>Total amount</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of revenue()">
+            <td><span class="badge" [ngClass]="r.status.toLowerCase()">{{ r.status }}</span></td>
+            <td>{{ r._count }}</td>
+            <td>{{ r._sum.amount | number }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
 
-  <div class="pricing-form" *ngIf="tab() === 'pricing'">
-    <label>
-      Free listings per business
-      <input type="number" [(ngModel)]="pricingForm.freeListingLimit" />
-    </label>
-    <label>
-      Price per listing after free tier
-      <input type="number" [(ngModel)]="pricingForm.pricePerListing" />
-    </label>
-    <button class="btn primary" (click)="savePricing()">Save</button>
-    <span class="saved-msg" *ngIf="pricingSaved()">Saved.</span>
-  </div>
-</div>
+  <ng-container *ngIf="tab() === 'pricing'">
+    <ui-toast [message]="pricingError()" tone="error" />
+    <ui-card class="pricing-form" *ngIf="!loading() && !pricingError()">
+      <label>
+        Free listings per business
+        <input uiInput type="number" min="1" step="1" required [(ngModel)]="pricingForm.freeListingLimit" />
+      </label>
+      <label>
+        Price per listing after free tier
+        <input uiInput type="number" min="0.01" step="0.01" required [(ngModel)]="pricingForm.pricePerListing" />
+      </label>
+      <label>
+        Currency (ISO 4217)
+        <input uiInput type="text" minlength="3" maxlength="3" required [(ngModel)]="pricingForm.currency" />
+      </label>
+      <button uiButton="primary" type="button" (click)="savePricing()">Save pricing</button>
+      <ui-toast
+        [visible]="pricingSaved()"
+        tone="success"
+        [message]="'Saved: ' + pricingForm.currency + ' ' + pricingForm.pricePerListing + ' per listing; ' + pricingForm.freeListingLimit + ' free listings.'"
+      />
+    </ui-card>
+  </ng-container>
+</main>

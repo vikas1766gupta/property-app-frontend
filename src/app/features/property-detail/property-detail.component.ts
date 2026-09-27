@@ -1,27 +1,40 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PropertyService } from '../../core/services/property.service';
+import { FavoriteService } from '../../core/services/favorite.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { LeadService } from '../../core/services/lead.service';
 import { Property } from '../../shared/models/property.model';
+import { UiButtonDirective } from '../../shared/ui/button.directive';
+import { UiCardComponent } from '../../shared/ui/card.component';
+import { UiEmptyStateComponent } from '../../shared/ui/empty-state.component';
+import { UiInputDirective } from '../../shared/ui/input.directive';
+import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
+import { UiToastComponent } from '../../shared/ui/toast.component';
 
 @Component({
   selector: 'app-property-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, UiButtonDirective, UiCardComponent, UiEmptyStateComponent, UiInputDirective, UiSkeletonComponent, UiToastComponent],
   templateUrl: './property-detail.component.html',
   styleUrl: './property-detail.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PropertyDetailComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly propertyService = inject(PropertyService);
+  readonly favoriteService = inject(FavoriteService);
+  readonly auth = inject(AuthService);
   private readonly leadService = inject(LeadService);
 
   readonly property = signal<Property | null>(null);
   readonly activeImage = signal(0);
   readonly loading = signal(true);
+  readonly propertyError = signal<string | null>(null);
+  readonly favoriteError = signal<string | null>(null);
   private touchStartX: number | null = null;
 
   readonly leadName = signal('');
@@ -32,10 +45,32 @@ export class PropertyDetailComponent {
   readonly leadSubmitting = signal(false);
 
   constructor() {
+    if (this.auth.getRole() === 'BUYER') {
+      this.favoriteService.loadMine().subscribe({
+        error: () => this.favoriteError.set('Saved properties could not be loaded. Try again later.'),
+      });
+    }
     const id = this.route.snapshot.paramMap.get('id')!;
-    this.propertyService.getById(id).subscribe((property) => {
-      this.property.set(property);
-      this.loading.set(false);
+    this.propertyService.getById(id).subscribe({
+      next: (property) => {
+        this.property.set(property);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.propertyError.set('This property could not be loaded. It may have been removed.');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  toggleFavorite(property: Property): void {
+    if (this.auth.getRole() !== 'BUYER') {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    this.favoriteError.set(null);
+    this.favoriteService.toggle(property).subscribe({
+      error: () => this.favoriteError.set('Could not update saved properties. Your change was rolled back.'),
     });
   }
 

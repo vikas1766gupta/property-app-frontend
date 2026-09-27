@@ -1,19 +1,25 @@
-<div class="auth-form">
-  <h2>Log in</h2>
+<main class="auth-page">
+  <ui-card class="auth-form">
+    <p class="eyebrow">PROPERTYHUB ACCOUNT</p>
+    <h1>Welcome back</h1>
+    <p class="auth-copy">Sign in to manage your properties and saved places.</p>
 
-  <label>
-    Email
-    <input type="email" [(ngModel)]="email" name="email" />
-  </label>
+    <label>
+      Email
+      <input uiInput type="email" [(ngModel)]="email" name="email" autocomplete="email" required />
+    </label>
 
-  <label>
-    Password
-    <input type="password" [(ngModel)]="password" name="password" />
-  </label>
+    <label>
+      Password
+      <input uiInput type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required />
+    </label>
 
-  <div class="error" *ngIf="error()">{{ error() }}</div>
+    <ui-toast [message]="error()" tone="error" />
 
-  <button (click)="submit()" [disabled]="loading()">{{ loading() ? 'Logging in…' : 'Log in' }}</button>
+    <button uiButton="primary" type="button" (click)="submit()" [disabled]="loading()">
+      {{ loading() ? 'Logging in…' : 'Log in' }}
+    </button>
 
-  <p>No account? <a routerLink="/register">Register as a business</a></p>
-</div>
+    <p class="auth-switch">New to PropertyHub? <a routerLink="/register">Create a business account</a></p>
+  </ui-card>
+</main>

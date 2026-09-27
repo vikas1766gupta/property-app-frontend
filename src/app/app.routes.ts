@@ -28,6 +28,12 @@ export const routes: Routes = [
       import('./features/business-dashboard/business-dashboard.component').then((m) => m.BusinessDashboardComponent),
   },
   {
+    path: 'saved',
+    canActivate: [roleGuard('BUYER')],
+    loadComponent: () =>
+      import('./features/favorite/saved-properties.component').then((m) => m.SavedPropertiesComponent),
+  },
+  {
     path: 'admin',
     canActivate: [roleGuard('ADMIN')],
     loadComponent: () => import('./features/admin-panel/admin-panel.component').then((m) => m.AdminPanelComponent),

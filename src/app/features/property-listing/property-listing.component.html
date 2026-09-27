@@ -1,27 +1,84 @@
 <div class="filters">
-  <input type="text" placeholder="City" [(ngModel)]="filters.city" (ngModelChange)="onFilterChange()" />
+  <input uiInput type="text" placeholder="City" aria-label="Filter by city" [(ngModel)]="filters.city" (ngModelChange)="onFilterChange()" />
 
-  <select [(ngModel)]="filters.listingType" (ngModelChange)="onFilterChange()">
+  <select uiInput aria-label="Filter by listing type" [(ngModel)]="filters.listingType" (ngModelChange)="onFilterChange()">
     <option [ngValue]="undefined">Rent or Sale</option>
     <option value="RENT">For Rent</option>
     <option value="SALE">For Sale</option>
   </select>
 
-  <input type="number" placeholder="Min price" [(ngModel)]="filters.minPrice" (ngModelChange)="onFilterChange()" />
-  <input type="number" placeholder="Max price" [(ngModel)]="filters.maxPrice" (ngModelChange)="onFilterChange()" />
-  <input type="number" placeholder="Min bedrooms" [(ngModel)]="filters.minBedrooms" (ngModelChange)="onFilterChange()" />
+  <input uiInput type="number" placeholder="Min price" aria-label="Minimum price" [(ngModel)]="filters.minPrice" (ngModelChange)="onFilterChange()" />
+  <input uiInput type="number" placeholder="Max price" aria-label="Maximum price" [(ngModel)]="filters.maxPrice" (ngModelChange)="onFilterChange()" />
+  <input uiInput type="number" placeholder="Min bedrooms" aria-label="Minimum bedrooms" [(ngModel)]="filters.minBedrooms" (ngModelChange)="onFilterChange()" />
+</div>
+
+<div class="results-toolbar">
+  <div class="view-switch" role="group" aria-label="Property result view">
+    <button uiButton type="button" [class.active]="!mapMode()" [attr.aria-pressed]="!mapMode()" (click)="setView(false)">List</button>
+    <button uiButton type="button" [class.active]="mapMode()" [attr.aria-pressed]="mapMode()" (click)="setView(true)">Map</button>
+  </div>
+  <label class="radius-control" *ngIf="mapMode()">
+    Search radius
+    <select uiInput [ngModel]="radiusKm()" (ngModelChange)="selectRadius($event)">
+      <option [ngValue]="5">5 km</option>
+      <option [ngValue]="10">10 km</option>
+      <option [ngValue]="25">25 km</option>
+      <option [ngValue]="50">50 km</option>
+      <option [ngValue]="100">100 km</option>
+    </select>
+  </label>
+  <button uiButton type="button" *ngIf="selectedCenter()" (click)="clearRadiusSearch()">Clear radius</button>
+  <div class="compare-controls" *ngIf="compareIds().length">
+    <span>{{ compareIds().length }} of 3 selected</span>
+    <button uiButton="primary" type="button" [disabled]="comparedProperties.length < 2" (click)="compareOpen.set(true)">Compare</button>
+    <button uiButton="quiet" type="button" (click)="clearCompare()">Clear</button>
+  </div>
 </div>
 
 <div class="results-meta" *ngIf="!loading()">{{ total() }} properties found</div>
+<ui-toast [message]="searchError()" tone="error" />
+<ui-toast [message]="favoriteError()" tone="error" />
+<ui-toast [message]="savedSearchError()" tone="error" />
+<ui-toast [message]="compareError()" tone="error" />
 
-<div class="card-grid">
-  <!-- Skeleton loaders instead of a blank screen -->
-  <ng-container *ngIf="loading()">
-    <div class="property-card skeleton" *ngFor="let i of [1,2,3,4,5,6]"></div>
-  </ng-container>
+<section class="buyer-search-tools" *ngIf="auth.getRole() === 'BUYER'" aria-label="Saved searches and alerts">
+  <ui-card class="save-search-card">
+    <h2>Save this search</h2>
+    <div class="save-search-fields">
+      <input uiInput type="text" maxlength="60" placeholder="Search name" aria-label="Saved search name" [(ngModel)]="savedSearchName" />
+      <label class="notify-option"><input type="checkbox" [(ngModel)]="notifyOnMatch" /> Alert me about new matches</label>
+      <button uiButton="primary" type="button" [disabled]="savedSearchBusy()" (click)="saveCurrentSearch()">{{ savedSearchBusy() ? 'Saving…' : 'Save search' }}</button>
+    </div>
+    <ui-toast [message]="savedSearchMessage()" tone="success" />
+  </ui-card>
 
-  <ng-container *ngIf="!loading()">
-    <article class="property-card" *ngFor="let property of listings(); trackBy: trackByPropertyId">
+  <details class="saved-search-list" *ngIf="savedSearches().length || notifications().length">
+    <summary>Saved searches &amp; alerts <span>{{ savedSearches().length }} searches · {{ notifications().length }} alerts</span></summary>
+    <div class="saved-search-rows" *ngIf="savedSearches().length">
+      <article class="saved-search-row" *ngFor="let savedSearch of savedSearches()">
+        <div><strong>{{ savedSearch.name }}</strong><small>{{ savedSearch.notifyOnMatch ? 'Alerts on' : 'Alerts off' }}</small></div>
+        <button uiButton="quiet" type="button" (click)="applySavedSearch(savedSearch)">Apply</button>
+        <button uiButton="danger" type="button" (click)="removeSavedSearch(savedSearch)" [attr.aria-label]="'Remove saved search ' + savedSearch.name">Remove</button>
+      </article>
+    </div>
+    <div class="notification-rows" *ngIf="notifications().length">
+      <a class="notification-row" *ngFor="let notification of notifications()" [routerLink]="notification.propertyId ? ['/properties', notification.propertyId] : null">
+        <strong>{{ notification.title }}</strong><span>{{ notification.message }}</span>
+        <small>{{ notification.createdAt | date: 'mediumDate' }}</small>
+      </a>
+    </div>
+  </details>
+</section>
+
+<ui-skeleton *ngIf="loading()" variant="card" [count]="6" label="Loading properties" />
+<ui-empty-state *ngIf="!loading() && !searchError() && listings().length === 0" class="results-empty"
+  mark="⌕" title="No properties found" description="Try a different filter combination or search radius." />
+<app-property-map class="property-map" *ngIf="mapMode() && !loading() && !searchError()"
+  [properties]="listings()" [radiusKm]="radiusKm()" [selectedCenter]="selectedCenter()"
+  (centerSelected)="onMapCenterSelected($event)" />
+
+<div class="card-grid" *ngIf="!mapMode() && !loading() && listings().length > 0">
+    <ui-card class="property-card" *ngFor="let property of listings(); trackBy: trackByPropertyId">
       <div class="image-carousel" (touchstart)="onTouchStart(property, $event)" (touchend)="onTouchEnd(property, $event)">
         <a class="carousel-link" [routerLink]="['/properties', property.id]" [attr.aria-label]="'View ' + property.title">
           <div class="image-track" [style.transform]="'translateX(-' + activeImage(property) * 100 + '%)'">
@@ -34,14 +91,27 @@
             />
           </div>
         </a>
+        <button
+          uiButton="quiet"
+          type="button"
+          class="favorite-toggle"
+          *ngIf="auth.getRole() === 'BUYER'"
+          [class.is-favorite]="favoriteService.isFavorited(property.id)"
+          [disabled]="favoriteService.isPending(property.id) || favoriteService.loading()"
+          [attr.aria-pressed]="favoriteService.isFavorited(property.id)"
+          [attr.aria-label]="favoriteService.isFavorited(property.id) ? 'Remove ' + property.title + ' from saved properties' : 'Save ' + property.title"
+          (click)="toggleFavorite(property)"
+        ><span aria-hidden="true">{{ favoriteService.isFavorited(property.id) ? '♥' : '♡' }}</span></button>
         <ng-container *ngIf="property.images.length > 1">
           <button
+            uiButton="quiet"
             type="button"
             class="carousel-arrow previous"
             [attr.aria-label]="'Previous image for ' + property.title"
             (click)="previousImage(property)"
           >&#8249;</button>
           <button
+            uiButton="quiet"
             type="button"
             class="carousel-arrow next"
             [attr.aria-label]="'Next image for ' + property.title"
@@ -50,6 +120,7 @@
           <span class="image-count" aria-live="polite">{{ activeImage(property) + 1 }} / {{ property.images.length }}</span>
           <div class="carousel-dots" aria-label="Choose property image">
             <button
+              uiButton="quiet"
               type="button"
               *ngFor="let image of property.images; let i = index"
               [class.active]="i === activeImage(property)"
@@ -57,6 +128,11 @@
               [attr.aria-pressed]="i === activeImage(property)"
               (click)="selectImage(property, i)"
             ></button>
+            <label class="compare-choice" [attr.aria-label]="'Compare ' + property.title">
+              <input type="checkbox" [checked]="isCompared(property.id)" [disabled]="!isCompared(property.id) && compareIds().length === 3"
+                (change)="toggleCompare(property)" />
+              <span>Compare</span>
+            </label>
           </div>
         </ng-container>
       </div>
@@ -66,6 +142,28 @@
         <div class="location">{{ property.city }}, {{ property.state }}</div>
         <div class="meta" *ngIf="property.bedrooms as bd">{{ bd }} BHK · {{ property.areaSqft }} sqft</div>
       </a>
-    </article>
-  </ng-container>
+    </ui-card>
 </div>
+
+<ui-modal [open]="compareOpen()" labelledBy="compare-title" (closed)="compareOpen.set(false)">
+  <section class="compare-modal">
+    <header><div><p class="eyebrow">PROPERTY COMPARISON</p><h2 id="compare-title">Compare properties</h2></div>
+      <button uiButton="quiet" type="button" (click)="clearCompare()" aria-label="Close comparison">Close</button>
+    </header>
+    <div class="table-scroll">
+      <table class="compare-table">
+        <thead><tr><th>Attribute</th><th *ngFor="let property of comparedProperties">{{ property.title }}</th></tr></thead>
+        <tbody>
+          <tr><th>Price</th><td *ngFor="let property of comparedProperties">{{ property.currency }} {{ property.price | number }}</td></tr>
+          <tr><th>Type</th><td *ngFor="let property of comparedProperties">{{ property.listingType }}</td></tr>
+          <tr><th>Location</th><td *ngFor="let property of comparedProperties">{{ property.city }}, {{ property.state }}</td></tr>
+          <tr><th>Bedrooms</th><td *ngFor="let property of comparedProperties">{{ property.bedrooms ?? '—' }}</td></tr>
+          <tr><th>Bathrooms</th><td *ngFor="let property of comparedProperties">{{ property.bathrooms ?? '—' }}</td></tr>
+          <tr><th>Area</th><td *ngFor="let property of comparedProperties">{{ property.areaSqft ? property.areaSqft + ' sqft' : '—' }}</td></tr>
+          <tr><th>Furnishing</th><td *ngFor="let property of comparedProperties">{{ property.furnishingStatus || '—' }}</td></tr>
+          <tr><th>Amenities</th><td *ngFor="let property of comparedProperties">{{ property.amenities.join(', ') || '—' }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</ui-modal>
