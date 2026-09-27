@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminListingRecord, AdminService, BusinessRecord, RevenueRow } from '../../core/services/admin.service';
+import { AdminListingRecord, AdminService, BusinessRecord, ReportRecord, RevenueRow, SubscriptionReportRow } from '../../core/services/admin.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UiButtonDirective } from '../../shared/ui/button.directive';
 import { UiCardComponent } from '../../shared/ui/card.component';
@@ -9,8 +9,10 @@ import { UiEmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { UiInputDirective } from '../../shared/ui/input.directive';
 import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
 import { UiToastComponent } from '../../shared/ui/toast.component';
+import { Plan } from '../../core/services/subscription.service';
+import { AdminAnalyticsSummary, AnalyticsService } from '../../core/services/analytics.service';
 
-type Tab = 'businesses' | 'listings' | 'revenue' | 'pricing';
+type Tab = 'businesses' | 'listings' | 'reports' | 'revenue' | 'subscriptions' | 'analytics' | 'pricing' | 'plans';
 
 @Component({
   selector: 'app-admin-panel',
@@ -23,11 +25,16 @@ type Tab = 'businesses' | 'listings' | 'revenue' | 'pricing';
 export class AdminPanelComponent {
   private readonly adminService = inject(AdminService);
   private readonly auth = inject(AuthService);
+  private readonly analyticsService = inject(AnalyticsService);
 
   readonly tab = signal<Tab>('businesses');
   readonly businesses = signal<BusinessRecord[]>([]);
   readonly listings = signal<AdminListingRecord[]>([]);
+  readonly reports = signal<ReportRecord[]>([]);
   readonly revenue = signal<RevenueRow[]>([]);
+  readonly subscriptions = signal<SubscriptionReportRow[]>([]);
+  readonly analytics = signal<AdminAnalyticsSummary | null>(null);
+  readonly analyticsDays = signal<7 | 30 | 90>(30);
   readonly loading = signal(true);
   readonly viewError = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
@@ -35,6 +42,9 @@ export class AdminPanelComponent {
   pricingForm = { freeListingLimit: 5, pricePerListing: 499, currency: 'INR' };
   readonly pricingSaved = signal(false);
   readonly pricingError = signal<string | null>(null);
+  readonly plans = signal<Plan[]>([]);
+  readonly planError = signal<string | null>(null);
+  planForm: Omit<Plan, 'id'> = { name: '', accountType: null, price: 0, currency: 'INR', billingInterval: 'MONTHLY', maxActiveListings: 5, featuredCredits: 0, maxTeamMembers: 1, leadManagement: false, analytics: false, priorityVisibility: false, profileVisibility: true, projectListingAccess: false, isActive: true };
 
   constructor() {
     this.loadTab('businesses');
@@ -45,9 +55,12 @@ export class AdminPanelComponent {
     this.loadTab(tab);
   }
 
+  setAnalyticsDays(days: 7 | 30 | 90): void { this.analyticsDays.set(days); this.loadTab('analytics'); }
+
   private loadTab(tab: Tab): void {
     this.loading.set(true);
     this.pricingError.set(null);
+    this.planError.set(null);
     this.viewError.set(null);
     if (tab === 'businesses') {
       this.adminService.listBusinesses().subscribe({
@@ -82,6 +95,15 @@ export class AdminPanelComponent {
           this.loading.set(false);
         },
       });
+    } else if (tab === 'reports') {
+      this.adminService.listReports().subscribe({ next: (data) => { this.reports.set(data); this.loading.set(false); }, error: () => { this.viewError.set('Reports could not be loaded.'); this.loading.set(false); } });
+    } else if (tab === 'subscriptions') {
+      this.adminService.subscriptionReport().subscribe({
+        next: (data) => { this.subscriptions.set(data); this.loading.set(false); },
+        error: () => { this.viewError.set('Subscription report could not be loaded.'); this.loading.set(false); },
+      });
+    } else if (tab === 'analytics') {
+      this.analyticsService.admin(this.analyticsDays()).subscribe({ next: (data) => { this.analytics.set(data); this.loading.set(false); }, error: () => { this.viewError.set('Analytics could not be loaded.'); this.loading.set(false); } });
     } else if (tab === 'pricing') {
       this.adminService.getPricing().subscribe({
         next: (config) => {
@@ -93,9 +115,18 @@ export class AdminPanelComponent {
           this.loading.set(false);
         },
       });
+    } else if (tab === 'plans') {
+      this.adminService.listPlans().subscribe({
+        next: (plans) => { this.plans.set(plans); this.loading.set(false); },
+        error: () => { this.planError.set('Plans could not be loaded.'); this.loading.set(false); },
+      });
     } else {
       this.loading.set(false);
     }
+  }
+
+  moderateReport(report: ReportRecord, status: 'UNDER_REVIEW' | 'DISMISSED' | 'SUSPENDED' | 'REJECTED' | 'RESOLVED'): void {
+    this.adminService.moderateReport(report.id, status).subscribe({ next: () => this.loadTab('reports'), error: () => this.actionError.set('Report could not be updated.') });
   }
 
   verify(business: BusinessRecord, status: 'VERIFIED' | 'REJECTED'): void {
@@ -135,6 +166,22 @@ export class AdminPanelComponent {
         },
         error: (error) => this.pricingError.set(error.error?.error || 'Could not save pricing configuration.'),
       });
+  }
+
+  savePlan(): void {
+    this.planError.set(null);
+    const request = this.planForm.name ? this.adminService.createPlan(this.planForm) : null;
+    request?.subscribe({ next: () => { this.planForm = { ...this.planForm, name: '' }; this.loadTab('plans'); }, error: (error) => this.planError.set(error.error?.error || 'Plan could not be created.') });
+  }
+
+  togglePlan(plan: Plan): void {
+    this.adminService.updatePlan(plan.id, { isActive: !plan.isActive }).subscribe({ next: () => this.loadTab('plans'), error: () => this.planError.set('Plan status could not be updated.') });
+  }
+
+  editPlan(plan: Plan): void {
+    const price = Number(window.prompt(`Price for ${plan.name}`, String(plan.price)));
+    if (!Number.isFinite(price) || price < 0) return;
+    this.adminService.updatePlan(plan.id, { price }).subscribe({ next: () => this.loadTab('plans'), error: () => this.planError.set('Plan could not be updated.') });
   }
 
   logout(): void {

@@ -1,5 +1,6 @@
 export type ListingType = 'RENT' | 'SALE';
 export type ListingStatus = 'DRAFT' | 'PENDING_PAYMENT' | 'PUBLISHED' | 'FLAGGED' | 'REMOVED';
+export type VerificationStatus = 'PENDING' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED' | 'EXPIRED';
 
 export interface PropertyImageReference {
   id: string;
@@ -13,11 +14,20 @@ export interface PropertyImageInput {
   isCover: boolean;
 }
 
+export interface PropertySellerSummary {
+  id: string;
+  accountType: 'OWNER' | 'BROKER' | 'BUILDER';
+  displayName: string | null;
+  companyName: string;
+  verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+}
+
 export interface Property {
   id: string;
   businessId: string;
   listingType: ListingType;
   status?: ListingStatus;
+  verificationStatus: VerificationStatus;
   title: string;
   description: string;
   price: number;
@@ -36,6 +46,8 @@ export interface Property {
   latitude?: number | null;
   longitude?: number | null;
   createdAt: string;
+  seller?: PropertySellerSummary;
+  promoted?: boolean;
 }
 
 export interface PropertySearchFilters {

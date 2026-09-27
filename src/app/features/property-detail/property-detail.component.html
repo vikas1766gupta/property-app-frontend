@@ -67,6 +67,27 @@
     <ui-toast [message]="favoriteError()" tone="error" />
     <div class="location">{{ p.addressLine }}, {{ p.city }}, {{ p.state }}</div>
 
+    <div class="trust-badges" aria-label="Trust status">
+      <span class="verified" *ngIf="listingBadge(p.verificationStatus) as badge">{{ badge }}</span>
+      <span class="verified" *ngIf="p.seller && sellerBadge(p.seller) as badge">{{ badge }}</span>
+    </div>
+
+    <a class="seller-link" *ngIf="p.seller" [routerLink]="['/businesses', p.seller.id]">
+      View {{ p.seller.accountType === 'BROKER' ? 'Broker' : p.seller.accountType === 'BUILDER' ? 'Builder' : 'Seller' }} ·
+      {{ p.seller.displayName || p.seller.companyName }}
+    </a>
+
+    <button uiButton="quiet" type="button" (click)="reportOpen.set(!reportOpen())" *ngIf="!reportSent()">Report this property</button>
+    <ui-card class="report-form" *ngIf="reportOpen()">
+      <h3>Report this property</h3>
+      <select uiInput [ngModel]="reportReason()" (ngModelChange)="reportReason.set($event)">
+        <option value="FAKE_PROPERTY">Fake property</option><option value="WRONG_PRICE">Wrong price</option><option value="DUPLICATE">Duplicate</option><option value="SPAM">Spam</option><option value="SCAM">Scam</option><option value="WRONG_INFORMATION">Wrong information</option><option value="OTHER">Other</option>
+      </select>
+      <textarea uiInput required minlength="5" placeholder="Tell us what is wrong" [ngModel]="reportDescription()" (ngModelChange)="reportDescription.set($event)"></textarea>
+      <ui-toast [message]="reportError()" tone="error" />
+      <button uiButton="primary" type="button" (click)="submitReport()">Submit report</button>
+    </ui-card>
+
     <div class="stats" *ngIf="p.bedrooms || p.areaSqft">
       <span *ngIf="p.bedrooms">{{ p.bedrooms }} Bed</span>
       <span *ngIf="p.bathrooms">{{ p.bathrooms }} Bath</span>

@@ -10,8 +10,12 @@
   <nav class="tabs" aria-label="Admin sections">
     <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'businesses'" [attr.aria-current]="tab() === 'businesses' ? 'page' : null" (click)="setTab('businesses')">Businesses</button>
     <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'listings'" [attr.aria-current]="tab() === 'listings' ? 'page' : null" (click)="setTab('listings')">Listings</button>
+    <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'reports'" [attr.aria-current]="tab() === 'reports' ? 'page' : null" (click)="setTab('reports')">Reports</button>
     <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'revenue'" [attr.aria-current]="tab() === 'revenue' ? 'page' : null" (click)="setTab('revenue')">Revenue</button>
+    <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'subscriptions'" [attr.aria-current]="tab() === 'subscriptions' ? 'page' : null" (click)="setTab('subscriptions')">Subscriptions</button>
+    <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'analytics'" [attr.aria-current]="tab() === 'analytics' ? 'page' : null" (click)="setTab('analytics')">Analytics</button>
     <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'pricing'" [attr.aria-current]="tab() === 'pricing' ? 'page' : null" (click)="setTab('pricing')">Pricing</button>
+    <button uiButton="quiet" type="button" class="tab" [class.active]="tab() === 'plans'" [attr.aria-current]="tab() === 'plans' ? 'page' : null" (click)="setTab('plans')">Plans</button>
   </nav>
 
   <ui-skeleton *ngIf="loading()" variant="row" [count]="4" label="Loading admin data" />
@@ -37,6 +41,11 @@
         </tbody>
       </table>
     </div>
+  </ng-container>
+
+  <ng-container *ngIf="!loading() && tab() === 'reports'">
+    <ui-empty-state *ngIf="!viewError() && reports().length === 0" mark="!" title="No reports found" description="Property, business, and project reports will appear here." />
+    <div class="table-scroll" *ngIf="!viewError() && reports().length > 0"><table><thead><tr><th>Entity</th><th>Reason</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead><tbody><tr *ngFor="let report of reports()"><td>{{ report.entityType }} · {{ report.entityId }}</td><td>{{ report.reason }}</td><td>{{ report.description }}</td><td><span class="badge">{{ report.status }}</span></td><td class="admin-actions"><button uiButton type="button" (click)="moderateReport(report, 'UNDER_REVIEW')">Review</button><button uiButton type="button" (click)="moderateReport(report, 'DISMISSED')">Dismiss</button><button uiButton="danger" type="button" (click)="moderateReport(report, 'SUSPENDED')">Suspend</button><button uiButton="danger" type="button" (click)="moderateReport(report, 'REJECTED')">Reject</button><button uiButton type="button" (click)="moderateReport(report, 'RESOLVED')">Resolve</button></td></tr></tbody></table></div>
   </ng-container>
 
   <ng-container *ngIf="!loading() && tab() === 'listings'">
@@ -76,6 +85,21 @@
     </div>
   </ng-container>
 
+  <ng-container *ngIf="!loading() && tab() === 'subscriptions'">
+    <ui-empty-state *ngIf="!viewError() && subscriptions().length === 0" mark="◷" title="No subscriptions found" description="Subscription lifecycle totals will appear here after checkout." />
+    <div class="table-scroll" *ngIf="!viewError() && subscriptions().length > 0">
+      <table><thead><tr><th>Status</th><th>Subscriptions</th></tr></thead><tbody><tr *ngFor="let row of subscriptions()"><td><span class="badge" [ngClass]="row.status.toLowerCase()">{{ row.status }}</span></td><td>{{ row._count }}</td></tr></tbody></table>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!loading() && tab() === 'analytics' && analytics() as stats">
+    <section class="analytics-panel">
+      <div class="analytics-toolbar"><h2>Platform analytics</h2><div><button uiButton [class.active]="analyticsDays() === 7" type="button" (click)="setAnalyticsDays(7)">7 days</button><button uiButton [class.active]="analyticsDays() === 30" type="button" (click)="setAnalyticsDays(30)">30 days</button><button uiButton [class.active]="analyticsDays() === 90" type="button" (click)="setAnalyticsDays(90)">90 days</button></div></div>
+      <div class="analytics-grid"><div><strong>{{ stats.newUsers | number }}</strong><span>new users</span></div><div><strong>{{ stats.activeListings | number }}</strong><span>active listings</span></div><div><strong>{{ stats.views | number }}</strong><span>views</span></div><div><strong>{{ stats.leads | number }}</strong><span>leads</span></div><div><strong>{{ stats.subscriptions | number }}</strong><span>subscriptions</span></div><div><strong>{{ stats.revenue | number }}</strong><span>revenue</span></div></div>
+      <div class="distribution-grid"><div><h3>Listings by city</h3><p *ngFor="let item of stats.cityDistribution"><span>{{ item.label }}</span><strong>{{ item.count }}</strong></p></div><div><h3>Listings by type</h3><p *ngFor="let item of stats.propertyTypeDistribution"><span>{{ item.label }}</span><strong>{{ item.count }}</strong></p></div></div>
+    </section>
+  </ng-container>
+
   <ng-container *ngIf="tab() === 'pricing'">
     <ui-toast [message]="pricingError()" tone="error" />
     <ui-card class="pricing-form" *ngIf="!loading() && !pricingError()">
@@ -98,5 +122,29 @@
         [message]="'Saved: ' + pricingForm.currency + ' ' + pricingForm.pricePerListing + ' per listing; ' + pricingForm.freeListingLimit + ' free listings.'"
       />
     </ui-card>
+  </ng-container>
+
+  <ng-container *ngIf="tab() === 'plans' && !loading()">
+    <ui-toast [message]="planError()" tone="error" />
+    <ui-card class="pricing-form">
+      <h2>Create plan</h2>
+      <div class="form-grid">
+        <input uiInput placeholder="Plan name" [(ngModel)]="planForm.name" />
+        <input uiInput type="number" min="0" placeholder="Price" [(ngModel)]="planForm.price" />
+        <input uiInput type="number" min="0" placeholder="Active listings" [(ngModel)]="planForm.maxActiveListings" />
+        <input uiInput type="number" min="0" placeholder="Featured credits" [(ngModel)]="planForm.featuredCredits" />
+        <input uiInput type="number" min="1" placeholder="Team members" [(ngModel)]="planForm.maxTeamMembers" />
+      </div>
+      <label><input type="checkbox" [(ngModel)]="planForm.leadManagement" /> Lead management</label>
+      <label><input type="checkbox" [(ngModel)]="planForm.analytics" /> Analytics</label>
+      <label><input type="checkbox" [(ngModel)]="planForm.priorityVisibility" /> Priority visibility</label>
+      <label><input type="checkbox" [(ngModel)]="planForm.projectListingAccess" /> Project listings</label>
+      <button uiButton="primary" type="button" (click)="savePlan()" [disabled]="!planForm.name.trim()">Create plan</button>
+    </ui-card>
+    <div class="table-scroll" *ngIf="plans().length">
+      <table><thead><tr><th>Name</th><th>Price</th><th>Listings</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody><tr *ngFor="let plan of plans()"><td>{{ plan.name }}</td><td>{{ plan.currency }} {{ plan.price | number }}</td><td>{{ plan.maxActiveListings }}</td><td>{{ plan.isActive ? 'Active' : 'Inactive' }}</td><td><button uiButton type="button" (click)="editPlan(plan)">Edit price</button><button uiButton="quiet" type="button" (click)="togglePlan(plan)">{{ plan.isActive ? 'Deactivate' : 'Activate' }}</button></td></tr></tbody>
+      </table>
+    </div>
   </ng-container>
 </main>

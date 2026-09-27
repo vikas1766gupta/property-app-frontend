@@ -137,6 +137,7 @@
         </ng-container>
       </div>
       <a class="property-info" [routerLink]="['/properties', property.id]">
+        <span class="promoted-label" *ngIf="property.promoted">Promoted</span>
         <div class="price">{{ property.currency }} {{ property.price | number }}</div>
         <div class="title">{{ property.title }}</div>
         <div class="location">{{ property.city }}, {{ property.state }}</div>

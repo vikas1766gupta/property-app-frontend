@@ -3,8 +3,11 @@ import { of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { LeadService } from '../../core/services/lead.service';
 import { PaymentService } from '../../core/services/payment.service';
+import { PromotionService } from '../../core/services/promotion.service';
 import { PropertyService } from '../../core/services/property.service';
+import { BusinessService } from '../../core/services/business.service';
 import { BusinessDashboardComponent } from './business-dashboard.component';
+import { AnalyticsService } from '../../core/services/analytics.service';
 
 describe('BusinessDashboardComponent listing validation', () => {
   beforeEach(waitForAsync(() => {
@@ -19,8 +22,11 @@ describe('BusinessDashboardComponent listing validation', () => {
           },
         },
         { provide: PaymentService, useValue: { history: () => of([]) } },
-        { provide: LeadService, useValue: { mine: () => of([]) } },
-        { provide: AuthService, useValue: { getRole: () => 'BUSINESS', logout: () => undefined } },
+        { provide: PromotionService, useValue: { configs: () => of([]), mine: () => of([]) } },
+        { provide: LeadService, useValue: { list: () => of({ items: [], total: 0 }), summary: () => of({ total: 0, new: 0, contacted: 0, siteVisits: 0, negotiation: 0, closed: 0, invalid: 0 }) } },
+        { provide: BusinessService, useValue: { getById: () => of(null), updateMine: () => of(null) } },
+        { provide: AuthService, useValue: { getRole: () => 'BUSINESS', getBusinessId: () => null, logout: () => undefined } },
+        { provide: AnalyticsService, useValue: { business: () => of(null), builder: () => of(null) } },
       ],
     }).compileComponents();
   }));

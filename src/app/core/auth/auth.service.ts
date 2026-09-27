@@ -56,4 +56,14 @@ export class AuthService {
       return null;
     }
   }
+
+  getBusinessId(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      return JSON.parse(atob(token.split('.')[1])).businessId ?? null;
+    } catch {
+      return null;
+    }
+  }
 }

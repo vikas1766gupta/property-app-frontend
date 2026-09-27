@@ -1,12 +1,16 @@
-import { HttpEventType, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { PropertyService } from '../../core/services/property.service';
 import { PaymentService, PaymentRecord } from '../../core/services/payment.service';
-import { LeadService, BusinessLead } from '../../core/services/lead.service';
+import { Promotion, PromotionConfig, PromotionService } from '../../core/services/promotion.service';
+import { LeadService, BusinessLead, LeadStatus, LeadSummary } from '../../core/services/lead.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { BusinessService } from '../../core/services/business.service';
+import { BusinessProfile, BusinessProfileUpdate } from '../../shared/models/business.model';
 import { Property, PropertyImageInput } from '../../shared/models/property.model';
 import { LocationPickerComponent, PickedLocation } from '../property-listing/location-picker.component';
 import { UiButtonDirective } from '../../shared/ui/button.directive';
@@ -16,10 +20,12 @@ import { UiInputDirective } from '../../shared/ui/input.directive';
 import { UiModalComponent } from '../../shared/ui/modal.component';
 import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
 import { UiToastComponent } from '../../shared/ui/toast.component';
+import { Entitlements, SubscriptionService } from '../../core/services/subscription.service';
+import { environment } from '../../../environments/environment';
+import { AnalyticsService, BusinessAnalyticsSummary, BuilderAnalyticsSummary } from '../../core/services/analytics.service';
 
 declare const Stripe: any; // loaded via <script src="https://js.stripe.com/v3/"> in index.html
 
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_replace_me'; // set from your Stripe dashboard
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_LISTING_IMAGES = 20;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -39,7 +45,7 @@ interface ListingImageDraft {
 @Component({
   selector: 'app-business-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, LocationPickerComponent, UiButtonDirective, UiCardComponent, UiEmptyStateComponent, UiInputDirective, UiModalComponent, UiSkeletonComponent, UiToastComponent],
+  imports: [CommonModule, FormsModule, RouterLink, LocationPickerComponent, UiButtonDirective, UiCardComponent, UiEmptyStateComponent, UiInputDirective, UiModalComponent, UiSkeletonComponent, UiToastComponent],
   templateUrl: './business-dashboard.component.html',
   styleUrl: './business-dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,8 +53,12 @@ interface ListingImageDraft {
 export class BusinessDashboardComponent implements OnDestroy {
   private readonly propertyService = inject(PropertyService);
   private readonly paymentService = inject(PaymentService);
+  private readonly promotionService = inject(PromotionService, { optional: true });
   private readonly leadService = inject(LeadService);
   private readonly auth = inject(AuthService);
+  private readonly businessService = inject(BusinessService);
+  private readonly analyticsService = inject(AnalyticsService);
+  private readonly subscriptionService = inject(HttpClient, { optional: true }) ? inject(SubscriptionService) : null;
 
   @ViewChild('cardElementRef') cardElementRef?: ElementRef<HTMLDivElement>;
 
@@ -57,6 +67,24 @@ export class BusinessDashboardComponent implements OnDestroy {
   readonly leads = signal<BusinessLead[]>([]);
   readonly leadsLoading = signal(true);
   readonly leadsError = signal<string | null>(null);
+  readonly leadSummary = signal<LeadSummary>({ total: 0, new: 0, contacted: 0, siteVisits: 0, negotiation: 0, closed: 0, invalid: 0 });
+  readonly leadTotal = signal(0);
+  readonly leadPage = signal(1);
+  readonly leadPageSize = 10;
+  readonly leadStatusFilter = signal<LeadStatus | ''>('');
+  readonly leadSourceFilter = signal('');
+  readonly leadFollowUpDue = signal(false);
+  readonly selectedLead = signal<BusinessLead | null>(null);
+  readonly leadDetailLoading = signal(false);
+  readonly leadDetailError = signal<string | null>(null);
+  readonly leadActionError = signal<string | null>(null);
+  readonly analytics = signal<BusinessAnalyticsSummary | null>(null);
+  readonly builderAnalytics = signal<BuilderAnalyticsSummary | null>(null);
+  readonly analyticsDays = signal<7 | 30 | 90>(30);
+  readonly analyticsError = signal<string | null>(null);
+  readonly leadNote = signal('');
+  readonly leadFollowUpAt = signal('');
+  readonly leadStatuses: LeadStatus[] = ['NEW', 'CONTACTED', 'INTERESTED', 'SITE_VISIT', 'NEGOTIATION', 'CLOSED', 'NOT_INTERESTED', 'INVALID'];
   readonly freeRemaining = signal(0);
   readonly loading = signal(true);
   readonly showCreateForm = signal(false);
@@ -71,9 +99,25 @@ export class BusinessDashboardComponent implements OnDestroy {
   readonly showCheckout = signal(false);
   readonly checkoutError = signal<string | null>(null);
   readonly checkoutProcessing = signal(false);
+  readonly checkoutLoading = signal(false);
+  readonly checkoutMessage = signal<string | null>(null);
   readonly imageDrafts = signal<ListingImageDraft[]>([]);
   readonly imageDragActive = signal(false);
   readonly imageUploadError = signal<string | null>(null);
+  readonly profile = signal<BusinessProfile | null>(null);
+  readonly profileLoading = signal(false);
+  readonly profileSaving = signal(false);
+  readonly profileError = signal<string | null>(null);
+  readonly profileMessage = signal<string | null>(null);
+  readonly entitlements = signal<Entitlements | null>(null);
+  readonly promotionConfigs = signal<PromotionConfig[]>([]);
+  readonly promotionMessage = signal<string | null>(null);
+  readonly promotions = signal<Promotion[]>([]);
+
+  profileForm: BusinessProfileUpdate = {
+    accountType: 'OWNER', displayName: '', companyName: '', profileImage: null, bio: '', yearsOfExperience: null,
+    phone: null, website: null, city: null, servedLocalities: [],
+  };
 
   // create-listing form model
   form = {
@@ -100,7 +144,47 @@ export class BusinessDashboardComponent implements OnDestroy {
   private readonly imageUploadSubscriptions = new Map<string, Subscription>();
 
   constructor() {
+    this.promotionService?.configs().subscribe({ next: (configs) => this.promotionConfigs.set(configs), error: () => undefined });
     this.refresh();
+    this.loadProfile();
+  }
+
+  loadAnalytics(): void {
+    if (!this.entitlements()?.analytics) {
+      this.analytics.set(null);
+      this.builderAnalytics.set(null);
+      this.analyticsError.set(null);
+      return;
+    }
+    const days = this.analyticsDays();
+    this.analyticsError.set(null);
+    this.analyticsService.business(days).subscribe({ next: (data) => this.analytics.set(data), error: () => this.analyticsError.set('Analytics could not be loaded.') });
+    if (this.profile()?.accountType === 'BUILDER') {
+      this.analyticsService.builder(days).subscribe({ next: (data) => this.builderAnalytics.set(data), error: () => undefined });
+    }
+  }
+
+  setAnalyticsDays(days: 7 | 30 | 90): void { this.analyticsDays.set(days); this.loadAnalytics(); }
+
+  promoteListing(property: Property): void {
+    const config = this.promotionConfigs().find((item) => item.type === 'FEATURED' && item.isActive);
+    if (!config) { this.promotionMessage.set('No listing promotion is currently available.'); return; }
+    this.promotionService?.purchase('PROPERTY', property.id, config.type).subscribe({
+      next: ({ checkout }) => {
+        if (!checkout) { this.promotionMessage.set('Promotion activated.'); return; }
+        this.showCheckout.set(true);
+        this.checkoutError.set(null);
+        this.checkoutMessage.set(null);
+        this.checkoutLoading.set(false);
+        setTimeout(() => this.mountStripeCard(checkout.clientSecret), 0);
+      },
+      error: (error) => this.promotionMessage.set(error?.error?.error ?? 'Promotion could not be started.'),
+    });
+  }
+
+  hasActivePromotion(propertyId: string): boolean {
+    const now = Date.now();
+    return this.promotions().some((promotion) => promotion.propertyId === propertyId && promotion.status === 'ACTIVE' && new Date(promotion.endAt).getTime() > now);
   }
 
   ngOnDestroy(): void {
@@ -121,10 +205,19 @@ export class BusinessDashboardComponent implements OnDestroy {
         this.listingLoadError.set('Listings could not be loaded. Refresh to try again.');
       },
     });
+    this.promotionService?.mine().subscribe({ next: (promotions) => this.promotions.set(promotions), error: () => undefined });
     this.freeRemainingError.set(null);
     this.propertyService.freeListingsRemaining().subscribe({
       next: (result) => this.freeRemaining.set(result.remaining),
       error: () => this.freeRemainingError.set('Free listing allowance could not be loaded.'),
+    });
+    this.subscriptionService?.entitlements().subscribe({
+      next: (entitlements) => {
+        this.entitlements.set(entitlements);
+        this.freeRemaining.set(Math.max(0, entitlements.maxActiveListings - entitlements.listingUsage));
+        this.loadAnalytics();
+      },
+      error: () => undefined,
     });
     this.paymentsLoading.set(true);
     this.paymentsError.set(null);
@@ -138,17 +231,98 @@ export class BusinessDashboardComponent implements OnDestroy {
         this.paymentsError.set('Payment history could not be loaded.');
       },
     });
+    this.loadLeads();
+    this.leadService.summary().subscribe({ next: (summary) => this.leadSummary.set(summary), error: () => undefined });
+  }
+
+  loadLeads(): void {
     this.leadsLoading.set(true);
     this.leadsError.set(null);
-    this.leadService.mine().subscribe({
-      next: (leads) => {
-        this.leads.set(leads);
-        this.leadsLoading.set(false);
+    this.leadService.list({ status: this.leadStatusFilter() || undefined, source: this.leadSourceFilter().trim() || undefined, followUpDue: this.leadFollowUpDue() || undefined, page: this.leadPage(), pageSize: this.leadPageSize }).subscribe({
+      next: (result) => { this.leads.set(result.items); this.leadTotal.set(result.total); this.leadsLoading.set(false); },
+      error: () => { this.leadsLoading.set(false); this.leadsError.set('Unable to load leads. Please refresh to try again.'); },
+    });
+  }
+
+  resetLeadFilters(): void { this.leadPage.set(1); this.loadLeads(); }
+  previousLeadPage(): void { if (this.leadPage() > 1) { this.leadPage.update((page) => page - 1); this.loadLeads(); } }
+  nextLeadPage(): void { if (this.leadPage() * this.leadPageSize < this.leadTotal()) { this.leadPage.update((page) => page + 1); this.loadLeads(); } }
+
+  openLead(lead: BusinessLead): void {
+    this.selectedLead.set(lead);
+    this.leadDetailLoading.set(true);
+    this.leadDetailError.set(null);
+    this.leadService.getById(lead.id).subscribe({
+      next: (detail) => { this.selectedLead.set(detail); this.leadDetailLoading.set(false); },
+      error: () => { this.leadDetailLoading.set(false); this.leadDetailError.set('Lead details could not be loaded.'); },
+    });
+  }
+
+  closeLead(): void { this.selectedLead.set(null); this.leadActionError.set(null); this.leadNote.set(''); this.leadFollowUpAt.set(''); }
+
+  changeLeadStatus(lead: BusinessLead, status: LeadStatus): void {
+    this.leadActionError.set(null);
+    this.leadService.updateStatus(lead.id, status).subscribe({
+      next: (updated) => { this.replaceLead(updated); this.leadService.summary().subscribe((summary) => this.leadSummary.set(summary)); },
+      error: (error) => { this.leadActionError.set(error?.error?.error ?? 'Lead status could not be updated.'); this.loadLeads(); },
+    });
+  }
+
+  addLeadNote(): void {
+    const lead = this.selectedLead();
+    const note = this.leadNote().trim();
+    if (!lead || !note) return;
+    this.leadService.addNote(lead.id, note).subscribe({ next: (updated) => { this.replaceLead(updated); this.leadNote.set(''); }, error: () => this.leadActionError.set('Note could not be saved.') });
+  }
+
+  scheduleLeadFollowUp(): void {
+    const lead = this.selectedLead();
+    if (!lead || !this.leadFollowUpAt()) return;
+    this.leadService.scheduleFollowUp(lead.id, new Date(this.leadFollowUpAt()).toISOString()).subscribe({ next: (updated) => { this.replaceLead(updated); this.leadFollowUpAt.set(''); }, error: (error) => this.leadActionError.set(error?.error?.error ?? 'Follow-up could not be scheduled.') });
+  }
+
+  private replaceLead(updated: BusinessLead): void {
+    this.leads.update((leads) => leads.map((lead) => lead.id === updated.id ? updated : lead));
+    this.selectedLead.set(updated);
+  }
+
+  private loadProfile(): void {
+    const businessId = this.auth.getBusinessId?.();
+    if (!businessId) return;
+    this.profileLoading.set(true);
+    this.businessService.getById(businessId).subscribe({
+      next: (profile) => {
+        this.profile.set(profile);
+        this.profileForm = {
+          accountType: profile.accountType,
+          displayName: profile.displayName ?? '',
+          companyName: profile.companyName,
+          profileImage: profile.profileImage,
+          bio: profile.bio ?? '',
+          yearsOfExperience: profile.yearsOfExperience,
+          phone: profile.phone,
+          website: profile.website,
+          city: profile.city,
+          servedLocalities: [...profile.servedLocalities],
+        };
+        this.profileLoading.set(false);
+        if (this.entitlements()?.analytics && profile.accountType === 'BUILDER') {
+          this.analyticsService.builder(this.analyticsDays()).subscribe({ next: (data) => this.builderAnalytics.set(data), error: () => undefined });
+        }
       },
-      error: () => {
-        this.leadsLoading.set(false);
-        this.leadsError.set('Unable to load inquiries. Please refresh to try again.');
-      },
+      error: () => { this.profileLoading.set(false); this.profileError.set('Profile could not be loaded.'); },
+    });
+  }
+
+  saveProfile(): void {
+    if (this.profileSaving()) return;
+    this.profileSaving.set(true);
+    this.profileError.set(null);
+    this.profileMessage.set(null);
+    const payload = { ...this.profileForm, servedLocalities: this.profileForm.servedLocalities?.map((locality) => locality.trim()).filter(Boolean) };
+    this.businessService.updateMine(payload).subscribe({
+      next: (profile) => { this.profile.set(profile); this.profileSaving.set(false); this.profileMessage.set('Profile updated.'); },
+      error: () => { this.profileSaving.set(false); this.profileError.set('Profile could not be updated. Check the details and try again.'); },
     });
   }
 
@@ -468,18 +642,26 @@ export class BusinessDashboardComponent implements OnDestroy {
     this.pendingPropertyId = propertyId;
     this.showCheckout.set(true);
     this.checkoutError.set(null);
+    this.checkoutMessage.set(null);
+    this.checkoutLoading.set(true);
+    this.checkoutProcessing.set(false);
 
     this.paymentService.createIntent(propertyId).subscribe({
       next: ({ clientSecret }) => {
+        this.checkoutLoading.set(false);
         // Deferred so the *ngIf-rendered card container exists in the DOM first.
         setTimeout(() => this.mountStripeCard(clientSecret), 0);
       },
-      error: () => this.checkoutError.set('Payment could not be initialized. Try again.'),
+      error: () => { this.checkoutLoading.set(false); this.checkoutError.set('Payment could not be initialized. Try again.'); },
     });
   }
 
   private mountStripeCard(clientSecret: string): void {
-    if (!this.stripe) this.stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+    if (!environment.stripePublishableKey) {
+      this.checkoutError.set('Payments are not configured yet. Please try again later.');
+      return;
+    }
+    if (!this.stripe) this.stripe = Stripe(environment.stripePublishableKey);
     const elements = this.stripe.elements();
     this.cardElement = elements.create('card');
     this.cardElement.mount(this.cardElementRef!.nativeElement);
@@ -501,14 +683,21 @@ export class BusinessDashboardComponent implements OnDestroy {
         // Actual publish happens server-side via the Stripe webhook; refresh
         // picks it up once that's processed (usually within a second or two).
         this.showCheckout.set(false);
+        this.checkoutMessage.set('Payment submitted. Your listing or promotion will activate after Stripe confirms it.');
         this.cardElement?.destroy();
         this.refresh();
-      });
+      })
+      .catch(() => this.checkoutError.set('Payment could not be completed. Check your card and try again.'))
+      .finally(() => this.checkoutProcessing.set(false));
   }
 
   cancelCheckout(): void {
     this.showCheckout.set(false);
+    this.checkoutLoading.set(false);
+    this.checkoutProcessing.set(false);
+    this.checkoutError.set(null);
     this.cardElement?.destroy();
+    this.cardElement = null;
   }
 
   deleteListing(id: string): void {

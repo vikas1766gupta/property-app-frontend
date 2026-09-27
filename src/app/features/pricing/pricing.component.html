@@ -1,0 +1,44 @@
+<main class="pricing-page">
+  <header class="pricing-header">
+    <p class="eyebrow">Business plans</p>
+    <h1>Choose the room your business needs.</h1>
+    <p>Scale listings, visibility, and lead work with settings your team can actually understand.</p>
+  </header>
+
+  <p class="pricing-error" *ngIf="error()" role="alert">{{ error() }}</p>
+  <div class="pricing-loading" *ngIf="loading()" aria-live="polite">Loading plans...</div>
+  <section class="plan-grid" *ngIf="!loading() && !error() && plans().length" aria-label="Available plans">
+    <article class="plan" *ngFor="let plan of plans()" [class.featured]="plan.name === 'PRO'" [class.current]="plan.id === currentPlanId()">
+      <div class="plan-topline">
+        <span>{{ plan.name }}</span>
+        <span *ngIf="plan.id === currentPlanId()" class="current-label">Current plan</span>
+        <span *ngIf="plan.id !== currentPlanId() && plan.name === 'PRO'" class="recommended">Recommended</span>
+      </div>
+      <div class="price">{{ plan.price | currency: plan.currency:'symbol':'1.0-0' }}<small>/{{ plan.billingInterval === 'YEARLY' ? 'year' : 'month' }}</small></div>
+      <ul>
+        <li>{{ plan.maxActiveListings }} active listings</li>
+        <li>{{ plan.featuredCredits }} featured credits</li>
+        <li>{{ plan.maxTeamMembers }} team member{{ plan.maxTeamMembers === 1 ? '' : 's' }}</li>
+        <li>{{ plan.leadManagement ? 'Lead management' : 'Basic enquiries' }}</li>
+        <li>{{ plan.analytics ? 'Analytics included' : 'Core listing insights' }}</li>
+        <li>{{ plan.projectListingAccess ? 'Project listings' : 'Property listings' }}</li>
+      </ul>
+      <button type="button" (click)="select(plan)" [disabled]="selectedPlanId() === plan.id || currentPlanId() === plan.id">
+        {{ currentPlanId() === plan.id ? 'Current plan' : selectedPlanId() === plan.id ? 'Updating...' : plan.price === 0 ? 'Start free' : 'Choose plan' }}
+      </button>
+    </article>
+  </section>
+  <section class="comparison" *ngIf="!loading() && !error() && plans().length" aria-labelledby="comparison-heading">
+    <div class="comparison-heading"><div><p class="eyebrow">At a glance</p><h2 id="comparison-heading">Compare every plan</h2></div><span>{{ plans().length }} plans · clear limits · no hidden features</span></div>
+    <div class="comparison-scroll"><table><thead><tr><th scope="col">Feature</th><th scope="col" *ngFor="let plan of plans()">{{ plan.name }}</th></tr></thead><tbody>
+      <tr><th scope="row">Active listings</th><td *ngFor="let plan of plans()">{{ featureValue(plan, 'listings') }}</td></tr>
+      <tr><th scope="row">Featured credits</th><td *ngFor="let plan of plans()">{{ featureValue(plan, 'featured') }}</td></tr>
+      <tr><th scope="row">Team members</th><td *ngFor="let plan of plans()">{{ featureValue(plan, 'team') }}</td></tr>
+      <tr><th scope="row">Lead management</th><td *ngFor="let plan of plans()">{{ featureValue(plan, 'leadManagement') }}</td></tr>
+      <tr><th scope="row">Analytics</th><td *ngFor="let plan of plans()">{{ featureValue(plan, 'analytics') }}</td></tr>
+      <tr><th scope="row">Priority visibility</th><td *ngFor="let plan of plans()">{{ featureValue(plan, 'priorityVisibility') }}</td></tr>
+      <tr><th scope="row">Project listings</th><td *ngFor="let plan of plans()">{{ featureValue(plan, 'projectListingAccess') }}</td></tr>
+    </tbody></table></div>
+  </section>
+  <p class="message" *ngIf="message()" role="status">{{ message() }}</p>
+</main>

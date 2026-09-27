@@ -1,0 +1,19 @@
+.profile-page { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+.profile-header { display: flex; gap: 1.25rem; align-items: center; padding: 2rem 0; border-bottom: 1px solid var(--border, #d8d4cc); }
+.profile-avatar, .profile-image { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; }
+.profile-avatar { display: grid; place-items: center; background: var(--ink, #252525); color: white; font-size: 2rem; }
+.eyebrow { color: var(--accent, #a04a2a); text-transform: uppercase; letter-spacing: .08em; font-size: .75rem; }
+h1, h2 { margin: 0 0 .5rem; }
+.company { margin: 0 0 .5rem; color: #69645d; }
+.verified { color: #26704a; font-weight: 700; font-size: .9rem; }
+.stats { display: flex; flex-wrap: wrap; gap: 2rem; padding: 1.5rem 0; border-bottom: 1px solid var(--border, #d8d4cc); }
+.stats div { display: grid; gap: .2rem; }
+.stats strong { font-size: 1.5rem; }
+.stats span, small { color: #69645d; }
+.profile-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; padding: 2rem 0; }
+.contact-card { display: grid; gap: .7rem; align-content: start; }
+.contact-card a { color: inherit; }
+.property-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.property-image { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.property-link { display: block; margin-top: .75rem; color: inherit; font-weight: 700; }
+@media (max-width: 700px) { .profile-grid { grid-template-columns: 1fr; } .stats { gap: 1rem 1.5rem; } }

@@ -14,6 +14,7 @@ describe('PropertyListingComponent', () => {
     businessId: 'business-1',
     listingType: 'RENT',
     status: 'PUBLISHED',
+    verificationStatus: 'PENDING',
     title: 'Sunny city apartment',
     description: 'A bright apartment close to the park and transit.',
     price: 1200,

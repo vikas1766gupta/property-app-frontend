@@ -1,9 +1,55 @@
 <div class="section">
+  <section class="profile-editor" aria-labelledby="profile-heading">
+    <h2 id="profile-heading">Business profile</h2>
+    <ui-skeleton *ngIf="profileLoading()" variant="row" [count]="2" label="Loading profile" />
+    <ui-toast [message]="profileError()" tone="error" />
+    <ui-toast [message]="profileMessage()" tone="success" />
+    <div class="form-grid" *ngIf="!profileLoading() && profile()">
+      <select uiInput [(ngModel)]="profileForm.accountType" aria-label="Business account type">
+        <option value="OWNER">Owner</option><option value="BROKER">Broker</option><option value="BUILDER">Builder</option>
+      </select>
+      <input uiInput maxlength="100" placeholder="Display name" [(ngModel)]="profileForm.displayName" />
+      <input uiInput maxlength="150" placeholder="Company name" [(ngModel)]="profileForm.companyName" />
+      <input uiInput type="url" maxlength="255" placeholder="Website" [(ngModel)]="profileForm.website" />
+      <input uiInput type="tel" placeholder="Phone" [(ngModel)]="profileForm.phone" />
+      <input uiInput type="text" maxlength="100" placeholder="City" [(ngModel)]="profileForm.city" />
+      <input uiInput type="number" min="0" max="100" placeholder="Years of experience" [(ngModel)]="profileForm.yearsOfExperience" />
+      <input uiInput placeholder="Areas served (comma separated)" [ngModel]="profileForm.servedLocalities?.join(', ')" (ngModelChange)="profileForm.servedLocalities = $event.split(',')" />
+    </div>
+    <textarea uiInput maxlength="1000" rows="3" placeholder="About your business" *ngIf="!profileLoading() && profile()" [(ngModel)]="profileForm.bio"></textarea>
+    <button uiButton="primary" type="button" *ngIf="!profileLoading() && profile()" (click)="saveProfile()" [disabled]="profileSaving()">{{ profileSaving() ? 'Saving…' : 'Save profile' }}</button>
+  </section>
+
+  <section class="entitlement-strip" *ngIf="entitlements() as access" aria-labelledby="plan-heading">
+    <div><span class="eyebrow">Current plan</span><h2 id="plan-heading">{{ access.name }}</h2></div>
+    <div><strong>{{ access.listingUsage }} / {{ access.maxActiveListings }}</strong><span> active listings</span></div>
+    <div><strong>{{ access.featuredCredits }}</strong><span> featured credits</span></div>
+    <div><strong>{{ access.analytics ? 'Included' : 'Not included' }}</strong><span> analytics</span></div>
+    <div><strong>{{ access.subscriptionId ? (access.subscriptionStatus || 'Active') : 'Free' }}</strong><span> subscription</span></div>
+    <div *ngIf="access.subscriptionId"><strong>{{ access.currentPeriodEnd | date: 'mediumDate' }}</strong><span> renewal date</span></div>
+    <div class="available-features"><span *ngIf="access.leadManagement">Lead CRM</span><span *ngIf="access.analytics">Analytics</span><span *ngIf="access.priorityVisibility">Priority visibility</span><span *ngIf="access.projectListingAccess">Project listings</span><span *ngIf="access.featuredCredits > 0">{{ access.featuredCredits }} featured credits</span></div>
+    <a routerLink="/pricing">Compare plans</a>
+  </section>
+
+  <section class="analytics-panel" aria-labelledby="analytics-heading">
+    <div class="section-heading"><div><span class="eyebrow">Performance</span><h2 id="analytics-heading">Analytics</h2></div><div class="range-picker" *ngIf="entitlements()?.analytics"><button uiButton [class.active]="analyticsDays() === 7" type="button" (click)="setAnalyticsDays(7)">7 days</button><button uiButton [class.active]="analyticsDays() === 30" type="button" (click)="setAnalyticsDays(30)">30 days</button><button uiButton [class.active]="analyticsDays() === 90" type="button" (click)="setAnalyticsDays(90)">90 days</button></div></div>
+    <div class="analytics-upgrade" *ngIf="entitlements() && !entitlements()?.analytics; else analyticsContent"><strong>Analytics is available on Pro and Business plans.</strong><a routerLink="/pricing">Compare plans</a></div>
+    <ng-template #analyticsContent>
+    <ui-toast [message]="analyticsError()" tone="error" />
+    <div class="analytics-grid" *ngIf="analytics() as stats">
+      <div><strong>{{ stats.propertyViews | number }}</strong><span>property views</span></div><div><strong>{{ stats.enquiries | number }}</strong><span>enquiries</span></div><div><strong>{{ stats.contactActions | number }}</strong><span>contact actions</span></div><div><strong>{{ stats.favorites | number }}</strong><span>favorites</span></div><div><strong>{{ stats.conversionToLead }}%</strong><span>lead conversion</span></div>
+    </div>
+    <div class="top-performance" *ngIf="analytics()?.topProperties?.length"><h3>Top-performing properties</h3><div *ngFor="let item of analytics()!.topProperties"><span>{{ item.name }}</span><strong>{{ item.views }} views · {{ item.enquiries }} enquiries</strong></div></div>
+    <div class="top-performance" *ngIf="profile()?.accountType === 'BUILDER' && builderAnalytics() as stats"><h3>Project performance</h3><p>{{ stats.projectViews }} views · {{ stats.enquiries }} enquiries · {{ stats.enquiryConversion }}% conversion</p><div *ngFor="let item of stats.topProjects"><span>{{ item.name }}</span><strong>{{ item.views }} views · {{ item.enquiries }} enquiries</strong></div></div>
+    </ng-template>
+  </section>
+
   <header class="dash-header">
     <h1>Your listings</h1>
     <div class="header-actions">
       <span class="free-counter">{{ freeRemaining() }} free listings left</span>
       <button uiButton="primary" type="button" (click)="openCreateForm()">+ New listing</button>
+      <a uiButton *ngIf="profile()?.accountType === 'BUILDER'" routerLink="/dashboard/projects">Manage projects</a>
       <button uiButton type="button" (click)="logout()">Log out</button>
     </div>
   </header>
@@ -91,6 +137,7 @@
   <ui-modal [open]="showCheckout()" labelledBy="checkout-title" (closed)="cancelCheckout()">
     <div class="checkout-box">
       <h2 id="checkout-title">Complete payment to publish this listing</h2>
+      <p *ngIf="checkoutLoading()" role="status">Preparing secure checkout…</p>
       <div #cardElementRef class="card-element"></div>
       <ui-toast [message]="checkoutError()" tone="error" />
       <div class="form-actions">
@@ -104,6 +151,7 @@
 
   <!-- Listings table -->
   <ui-toast [message]="listingLoadError()" tone="error" />
+  <ui-toast [message]="promotionMessage()" tone="success" />
   <ui-skeleton *ngIf="loading()" variant="row" [count]="5" label="Loading listings" />
   <ui-empty-state
     *ngIf="!loading() && !listingLoadError() && listings().length === 0"
@@ -124,7 +172,7 @@
     </thead>
     <tbody>
       <tr *ngFor="let p of listings(); trackBy: trackByPropertyId">
-        <td>{{ p.title }}</td>
+        <td>{{ p.title }} <span class="badge" *ngIf="hasActivePromotion(p.id)">Promoted</span></td>
         <td>{{ p.listingType }}</td>
         <td>{{ p.currency }} {{ p.price | number }}</td>
         <td><span class="badge" [ngClass]="p.status?.toLowerCase()">{{ p.status }}</span></td>
@@ -138,6 +186,7 @@
           >
             Pay to publish
           </button>
+          <button uiButton="quiet" type="button" *ngIf="p.status === 'PUBLISHED'" (click)="promoteListing(p)">Promote listing</button>
           <button uiButton="danger" type="button" (click)="deleteListing(p.id)">Delete</button>
         </td>
       </tr>
@@ -145,34 +194,46 @@
   </table>
   </div>
 
-  <section class="leads-section" aria-labelledby="leads-heading">
-    <h2 id="leads-heading">Property inquiries <span>{{ leads().length }}</span></h2>
+  <section class="leads-section" aria-labelledby="leads-heading" *ngIf="entitlements()?.leadManagement; else leadUpgrade">
+    <h2 id="leads-heading">Leads / CRM <span>{{ leadSummary().total }}</span></h2>
+    <div class="lead-summary-grid">
+      <div><strong>{{ leadSummary().new }}</strong><span>New</span></div><div><strong>{{ leadSummary().contacted }}</strong><span>Contacted</span></div>
+      <div><strong>{{ leadSummary().siteVisits }}</strong><span>Site visits</span></div><div><strong>{{ leadSummary().negotiation }}</strong><span>Negotiation</span></div>
+      <div><strong>{{ leadSummary().closed }}</strong><span>Closed</span></div><div><strong>{{ leadSummary().invalid }}</strong><span>Invalid</span></div>
+    </div>
+    <div class="lead-filters">
+      <select uiInput aria-label="Filter leads by status" [ngModel]="leadStatusFilter()" (ngModelChange)="leadStatusFilter.set($event); resetLeadFilters()"><option value="">All statuses</option><option *ngFor="let status of leadStatuses" [value]="status">{{ status }}</option></select>
+      <input uiInput type="search" placeholder="Filter by source" aria-label="Filter leads by source" [ngModel]="leadSourceFilter()" (ngModelChange)="leadSourceFilter.set($event); resetLeadFilters()" />
+      <label><input type="checkbox" [ngModel]="leadFollowUpDue()" (ngModelChange)="leadFollowUpDue.set($event); resetLeadFilters()" /> Follow-up due</label>
+    </div>
     <ui-toast [message]="leadsError()" tone="error" />
-    <ui-skeleton *ngIf="leadsLoading()" variant="row" [count]="3" label="Loading inquiries" />
-    <ui-empty-state *ngIf="!leadsLoading() && !leadsError() && leads().length === 0" mark="↗" title="No inquiries yet" description="Buyer messages for your listings will appear here." />
+    <ui-skeleton *ngIf="leadsLoading()" variant="row" [count]="3" label="Loading leads" />
+    <ui-empty-state *ngIf="!leadsLoading() && !leadsError() && leads().length === 0" mark="↗" title="No leads found" description="New buyer inquiries will appear here." />
     <div class="leads-table-wrap" *ngIf="!leadsLoading() && !leadsError() && leads().length > 0">
-      <table>
-        <thead>
-          <tr>
-            <th>Listing</th>
-            <th>From</th>
-            <th>Contact</th>
-            <th>Message</th>
-            <th>Received</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let lead of leads(); trackBy: trackByLeadId">
-            <td>{{ lead.propertyTitle }}<small>{{ lead.propertyCity }}</small></td>
-            <td>{{ lead.name }}</td>
-            <td>{{ lead.contact }}</td>
-            <td class="lead-message">{{ lead.message }}</td>
-            <td>{{ lead.createdAt | date: 'medium' }}</td>
-          </tr>
-        </tbody>
+      <table><thead><tr><th>Listing</th><th>From</th><th>Status</th><th>Next follow-up</th><th>Source</th><th></th></tr></thead>
+        <tbody><tr *ngFor="let lead of leads(); trackBy: trackByLeadId">
+          <td>{{ lead.propertyTitle }}<small>{{ lead.propertyCity }}</small></td><td>{{ lead.name }}<small>{{ lead.createdAt | date: 'mediumDate' }}</small></td>
+          <td><select uiInput [ngModel]="lead.status" (ngModelChange)="changeLeadStatus(lead, $event)"><option *ngFor="let status of leadStatuses" [value]="status">{{ status }}</option></select></td>
+          <td>{{ lead.nextFollowUpAt ? (lead.nextFollowUpAt | date: 'mediumDate') : '—' }}</td><td>{{ lead.source || 'Website' }}</td><td><button uiButton="quiet" type="button" (click)="openLead(lead)">Open</button></td>
+        </tr></tbody>
       </table>
+      <div class="lead-pagination"><button uiButton="quiet" type="button" (click)="previousLeadPage()" [disabled]="leadPage() === 1">Previous</button><span>Page {{ leadPage() }}</span><button uiButton="quiet" type="button" (click)="nextLeadPage()" [disabled]="leadPage() * leadPageSize >= leadTotal()">Next</button></div>
     </div>
   </section>
+
+  <ng-template #leadUpgrade><section class="leads-section" aria-labelledby="leads-heading"><h2 id="leads-heading">Leads / CRM</h2><p>Lead management is available on Pro and Business plans.</p><a routerLink="/pricing">Upgrade to unlock lead management</a></section></ng-template>
+
+  <ui-modal [open]="selectedLead() !== null" labelledBy="lead-detail-heading" (closed)="closeLead()">
+    <section class="lead-detail" *ngIf="selectedLead() as lead">
+      <h2 id="lead-detail-heading">{{ lead.name }}</h2><p>{{ lead.propertyTitle }} · {{ lead.propertyCity }}</p><p>{{ lead.contact }}</p><p>{{ lead.message }}</p>
+      <ui-toast [message]="leadDetailError()" tone="error" /><ui-toast [message]="leadActionError()" tone="error" />
+      <label>Status<select uiInput [ngModel]="lead.status" (ngModelChange)="changeLeadStatus(lead, $event)"><option *ngFor="let status of leadStatuses" [value]="status">{{ status }}</option></select></label>
+      <label>Follow-up<input uiInput type="datetime-local" [ngModel]="leadFollowUpAt()" (ngModelChange)="leadFollowUpAt.set($event)" /></label>
+      <button uiButton="primary" type="button" (click)="scheduleLeadFollowUp()">Schedule follow-up</button>
+      <label>Add note<textarea uiInput rows="3" [ngModel]="leadNote()" (ngModelChange)="leadNote.set($event)"></textarea></label><button uiButton type="button" (click)="addLeadNote()">Add note</button>
+      <pre *ngIf="lead.notes">{{ lead.notes }}</pre>
+    </section>
+  </ui-modal>
 
   <h2 class="payments-heading">Payment history</h2>
   <ui-toast [message]="paymentsError()" tone="error" />
