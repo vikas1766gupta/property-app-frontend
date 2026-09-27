@@ -1,0 +1,1 @@
+import{Jb as n,Mb as o,N as e,T as i}from"./chunk-BHOPYVT7.js";var f=(()=>{class t{http=i(n);baseUrl=`${o.apiUrl}/leads`;submit(r){return this.http.post(`${this.baseUrl}`,r)}mine(){return this.http.get(`${this.baseUrl}/mine`)}static \u0275fac=function(a){return new(a||t)};static \u0275prov=e({token:t,factory:t.\u0275fac,providedIn:"root"})}return t})();export{f as a};
