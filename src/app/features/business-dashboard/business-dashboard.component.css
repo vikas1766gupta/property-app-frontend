@@ -1,0 +1,139 @@
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.free-counter {
+  font-size: 0.85rem;
+  color: #555;
+  background: #f0f0f0;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+}
+
+.create-form {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-grid input,
+.form-grid select,
+.create-form textarea {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.form-error {
+  color: #b42318;
+  margin: 0.5rem 0;
+}
+
+.listing-actions {
+  white-space: nowrap;
+}
+
+.listing-actions .btn + .btn {
+  margin-left: 0.35rem;
+}
+
+.checkout-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.checkout-box {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  width: min(400px, 90vw);
+}
+
+.card-element {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.payments-heading {
+  margin-top: 2rem;
+}
+
+.leads-section {
+  margin-top: 2rem;
+}
+
+.leads-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.leads-section h2 span {
+  color: #555;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.leads-table-wrap {
+  overflow-x: auto;
+}
+
+.leads-table-wrap table {
+  min-width: 720px;
+}
+
+.leads-table-wrap small {
+  display: block;
+  color: #666;
+}
+
+.lead-message {
+  min-width: 220px;
+  max-width: 420px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.leads-error {
+  color: #b42318;
+}
+
+.leads-empty {
+  color: #555;
+}
