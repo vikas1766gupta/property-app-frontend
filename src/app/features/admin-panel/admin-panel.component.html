@@ -1,0 +1,77 @@
+<div class="section">
+  <header class="dash-header">
+    <h1>Admin</h1>
+    <button class="btn" (click)="logout()">Log out</button>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab" [class.active]="tab() === 'businesses'" (click)="setTab('businesses')">Businesses</button>
+    <button class="tab" [class.active]="tab() === 'listings'" (click)="setTab('listings')">Listings</button>
+    <button class="tab" [class.active]="tab() === 'revenue'" (click)="setTab('revenue')">Revenue</button>
+    <button class="tab" [class.active]="tab() === 'pricing'" (click)="setTab('pricing')">Pricing</button>
+  </nav>
+
+  <p *ngIf="loading()">Loading…</p>
+
+  <table *ngIf="!loading() && tab() === 'businesses'">
+    <thead>
+      <tr><th>Company</th><th>Email</th><th>Phone</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let b of businesses()">
+        <td>{{ b.companyName }}</td>
+        <td>{{ b.user.email }}</td>
+        <td>{{ b.contactPhone || '—' }}</td>
+        <td><span class="badge" [ngClass]="b.verificationStatus.toLowerCase()">{{ b.verificationStatus }}</span></td>
+        <td>
+          <button class="btn primary" (click)="verify(b, 'VERIFIED')" *ngIf="b.verificationStatus !== 'VERIFIED'">Approve</button>
+          <button class="btn danger" (click)="verify(b, 'REJECTED')" *ngIf="b.verificationStatus !== 'REJECTED'">Reject</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table *ngIf="!loading() && tab() === 'listings'">
+    <thead>
+      <tr><th>Title</th><th>City</th><th>Price</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let l of listings()">
+        <td>{{ l.title }}</td>
+        <td>{{ l.city }}</td>
+        <td>{{ l.currency }} {{ l.price | number }}</td>
+        <td><span class="badge" [ngClass]="l.status?.toLowerCase()">{{ l.status }}</span></td>
+        <td>
+          <button class="btn" (click)="flag(l)" *ngIf="l.status !== 'FLAGGED'">Flag</button>
+          <button class="btn danger" (click)="remove(l)" *ngIf="l.status !== 'REMOVED'">Remove</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table *ngIf="!loading() && tab() === 'revenue'">
+    <thead>
+      <tr><th>Status</th><th>Count</th><th>Total amount</th></tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of revenue()">
+        <td><span class="badge" [ngClass]="r.status.toLowerCase()">{{ r.status }}</span></td>
+        <td>{{ r._count }}</td>
+        <td>{{ r._sum.amount | number }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="pricing-form" *ngIf="tab() === 'pricing'">
+    <label>
+      Free listings per business
+      <input type="number" [(ngModel)]="pricingForm.freeListingLimit" />
+    </label>
+    <label>
+      Price per listing after free tier
+      <input type="number" [(ngModel)]="pricingForm.pricePerListing" />
+    </label>
+    <button class="btn primary" (click)="savePricing()">Save</button>
+    <span class="saved-msg" *ngIf="pricingSaved()">Saved.</span>
+  </div>
+</div>

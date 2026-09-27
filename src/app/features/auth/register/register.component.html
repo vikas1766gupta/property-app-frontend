@@ -1,0 +1,29 @@
+<div class="auth-form">
+  <h2>Register your business</h2>
+
+  <label>
+    Company name
+    <input type="text" [(ngModel)]="companyName" name="companyName" />
+  </label>
+
+  <label>
+    Email
+    <input type="email" [(ngModel)]="email" name="email" />
+  </label>
+
+  <label>
+    Phone (optional)
+    <input type="tel" [(ngModel)]="contactPhone" name="contactPhone" />
+  </label>
+
+  <label>
+    Password
+    <input type="password" [(ngModel)]="password" name="password" />
+  </label>
+
+  <div class="error" *ngIf="error()">{{ error() }}</div>
+
+  <button (click)="submit()" [disabled]="loading()">{{ loading() ? 'Creating account…' : 'Create account' }}</button>
+
+  <p>Already registered? <a routerLink="/login">Log in</a></p>
+</div>

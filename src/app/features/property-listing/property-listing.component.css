@@ -1,0 +1,171 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.filters input,
+.filters select {
+  flex: 1 1 140px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.results-meta {
+  padding: 0 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.property-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  color: inherit;
+  min-width: 0;
+}
+
+.image-carousel {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  background: #f0f0f0;
+}
+
+.carousel-link {
+  display: block;
+  overflow: hidden;
+}
+
+.image-track {
+  display: flex;
+  transition: transform 280ms ease;
+  will-change: transform;
+}
+
+.property-image {
+  display: block;
+  flex: 0 0 100%;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #f0f0f0;
+}
+
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #222;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 1.65rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.22);
+}
+
+.carousel-arrow:hover {
+  background: #fff;
+}
+
+.carousel-arrow:focus-visible,
+.carousel-dots button:focus-visible {
+  outline: 3px solid #3867d6;
+  outline-offset: 2px;
+}
+
+.carousel-arrow.previous {
+  left: 0.6rem;
+}
+
+.carousel-arrow.next {
+  right: 0.6rem;
+}
+
+.image-count {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.62);
+  font-size: 0.75rem;
+}
+
+.carousel-dots {
+  position: absolute;
+  bottom: 0.55rem;
+  left: 50%;
+  display: flex;
+  gap: 0.35rem;
+  transform: translateX(-50%);
+}
+
+.carousel-dots button {
+  width: 0.45rem;
+  height: 0.45rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+
+.carousel-dots button.active {
+  background: #fff;
+  transform: scale(1.2);
+}
+
+.property-info {
+  display: block;
+  padding: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.price {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.title {
+  font-size: 0.95rem;
+  margin: 0.25rem 0;
+}
+
+.location,
+.meta {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.skeleton {
+  aspect-ratio: 3 / 4;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
