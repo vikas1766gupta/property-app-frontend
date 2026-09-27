@@ -1,0 +1,71 @@
+<div class="filters">
+  <input type="text" placeholder="City" [(ngModel)]="filters.city" (ngModelChange)="onFilterChange()" />
+
+  <select [(ngModel)]="filters.listingType" (ngModelChange)="onFilterChange()">
+    <option [ngValue]="undefined">Rent or Sale</option>
+    <option value="RENT">For Rent</option>
+    <option value="SALE">For Sale</option>
+  </select>
+
+  <input type="number" placeholder="Min price" [(ngModel)]="filters.minPrice" (ngModelChange)="onFilterChange()" />
+  <input type="number" placeholder="Max price" [(ngModel)]="filters.maxPrice" (ngModelChange)="onFilterChange()" />
+  <input type="number" placeholder="Min bedrooms" [(ngModel)]="filters.minBedrooms" (ngModelChange)="onFilterChange()" />
+</div>
+
+<div class="results-meta" *ngIf="!loading()">{{ total() }} properties found</div>
+
+<div class="card-grid">
+  <!-- Skeleton loaders instead of a blank screen -->
+  <ng-container *ngIf="loading()">
+    <div class="property-card skeleton" *ngFor="let i of [1,2,3,4,5,6]"></div>
+  </ng-container>
+
+  <ng-container *ngIf="!loading()">
+    <article class="property-card" *ngFor="let property of listings(); trackBy: trackByPropertyId">
+      <div class="image-carousel" (touchstart)="onTouchStart(property, $event)" (touchend)="onTouchEnd(property, $event)">
+        <a class="carousel-link" [routerLink]="['/properties', property.id]" [attr.aria-label]="'View ' + property.title">
+          <div class="image-track" [style.transform]="'translateX(-' + activeImage(property) * 100 + '%)'">
+            <img
+              *ngFor="let image of imagesFor(property); let i = index"
+              [src]="image"
+              [alt]="property.title + (property.images.length > 1 ? ' — image ' + (i + 1) + ' of ' + property.images.length : '')"
+              loading="lazy"
+              class="property-image"
+            />
+          </div>
+        </a>
+        <ng-container *ngIf="property.images.length > 1">
+          <button
+            type="button"
+            class="carousel-arrow previous"
+            [attr.aria-label]="'Previous image for ' + property.title"
+            (click)="previousImage(property)"
+          >&#8249;</button>
+          <button
+            type="button"
+            class="carousel-arrow next"
+            [attr.aria-label]="'Next image for ' + property.title"
+            (click)="nextImage(property)"
+          >&#8250;</button>
+          <span class="image-count" aria-live="polite">{{ activeImage(property) + 1 }} / {{ property.images.length }}</span>
+          <div class="carousel-dots" aria-label="Choose property image">
+            <button
+              type="button"
+              *ngFor="let image of property.images; let i = index"
+              [class.active]="i === activeImage(property)"
+              [attr.aria-label]="'Show image ' + (i + 1)"
+              [attr.aria-pressed]="i === activeImage(property)"
+              (click)="selectImage(property, i)"
+            ></button>
+          </div>
+        </ng-container>
+      </div>
+      <a class="property-info" [routerLink]="['/properties', property.id]">
+        <div class="price">{{ property.currency }} {{ property.price | number }}</div>
+        <div class="title">{{ property.title }}</div>
+        <div class="location">{{ property.city }}, {{ property.state }}</div>
+        <div class="meta" *ngIf="property.bedrooms as bd">{{ bd }} BHK · {{ property.areaSqft }} sqft</div>
+      </a>
+    </article>
+  </ng-container>
+</div>
