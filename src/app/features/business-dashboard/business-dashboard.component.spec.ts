@@ -1,4 +1,5 @@
 import { TestBed, waitForAsync } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { LeadService } from '../../core/services/lead.service';
@@ -14,6 +15,7 @@ describe('BusinessDashboardComponent listing validation', () => {
     TestBed.configureTestingModule({
       imports: [BusinessDashboardComponent],
       providers: [
+        { provide: ActivatedRoute, useValue: {} },
         {
           provide: PropertyService,
           useValue: {
@@ -83,6 +85,19 @@ describe('BusinessDashboardComponent listing validation', () => {
     }]);
 
     expect(component.canSaveListing()).toBeFalse();
+    fixture.destroy();
+  });
+
+  it('starts on overview and switches dashboard sections', () => {
+    const fixture = TestBed.createComponent(BusinessDashboardComponent);
+    const component = fixture.componentInstance;
+
+    expect(component.activeSection()).toBe('overview');
+    component.navigate('profile');
+    expect(component.activeSection()).toBe('profile');
+    component.navigate('settings');
+    expect(component.activeSection()).toBe('settings');
+    expect(component.sectionLabel()).toBe('Settings');
     fixture.destroy();
   });
 });

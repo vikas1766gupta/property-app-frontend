@@ -1,4 +1,5 @@
 import { TestBed, waitForAsync } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { BusinessService } from '../../core/services/business.service';
@@ -18,6 +19,7 @@ function configure(leadService: any) {
   return TestBed.configureTestingModule({
     imports: [BusinessDashboardComponent],
     providers: [
+      { provide: ActivatedRoute, useValue: {} },
       { provide: PropertyService, useValue: { myListings: () => of([]), freeListingsRemaining: () => of({ remaining: 0 }) } },
       { provide: PaymentService, useValue: { history: () => of([]) } },
       { provide: PromotionService, useValue: { configs: () => of([]), mine: () => of([]) } },

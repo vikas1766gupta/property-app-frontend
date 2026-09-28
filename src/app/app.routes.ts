@@ -39,6 +39,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
   },
   {
+    path: 'admin/register',
+    loadComponent: () => import('./features/auth/admin-register/admin-register.component').then((m) => m.AdminRegisterComponent),
+  },
+  {
     path: 'dashboard',
     canActivate: [roleGuard('BUSINESS')],
     loadComponent: () =>

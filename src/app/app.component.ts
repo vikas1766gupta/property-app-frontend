@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth/auth.service';
 
 @Component({
@@ -9,7 +9,7 @@ import { AuthService } from './core/auth/auth.service';
   imports: [CommonModule, RouterLink, RouterOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <nav class="top-nav">
+    <nav class="top-nav" *ngIf="!isDashboardRoute()">
       <a routerLink="/properties" class="brand">PropertyHub</a>
       <div class="nav-links">
         <a routerLink="/properties">Browse</a>
@@ -67,4 +67,9 @@ import { AuthService } from './core/auth/auth.service';
 })
 export class AppComponent {
   readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  isDashboardRoute(): boolean {
+    return this.router.url === '/dashboard' || this.router.url.startsWith('/dashboard/');
+  }
 }

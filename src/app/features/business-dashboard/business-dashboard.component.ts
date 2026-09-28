@@ -29,6 +29,7 @@ declare const Stripe: any; // loaded via <script src="https://js.stripe.com/v3/"
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_LISTING_IMAGES = 20;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+type DashboardSection = 'overview' | 'listings' | 'leads' | 'analytics' | 'promotions' | 'subscription' | 'profile' | 'settings';
 
 interface ListingImageDraft {
   key: string;
@@ -113,6 +114,8 @@ export class BusinessDashboardComponent implements OnDestroy {
   readonly promotionConfigs = signal<PromotionConfig[]>([]);
   readonly promotionMessage = signal<string | null>(null);
   readonly promotions = signal<Promotion[]>([]);
+  readonly activeSection = signal<DashboardSection>('overview');
+  readonly sidebarOpen = signal(false);
 
   profileForm: BusinessProfileUpdate = {
     accountType: 'OWNER', displayName: '', companyName: '', profileImage: null, bio: '', yearsOfExperience: null,
@@ -149,6 +152,25 @@ export class BusinessDashboardComponent implements OnDestroy {
     this.loadProfile();
   }
 
+  navigate(section: DashboardSection): void {
+    this.activeSection.set(section);
+    this.sidebarOpen.set(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen.update((open) => !open);
+  }
+
+
+  sectionLabel(): string {
+    const labels: Record<DashboardSection, string> = {
+      overview: 'Overview', listings: 'Listings', leads: 'Leads & CRM', analytics: 'Analytics',
+      promotions: 'Promotions', subscription: 'Subscription', profile: 'Profile', settings: 'Settings',
+    };
+    return labels[this.activeSection()];
+  }
+
   loadAnalytics(): void {
     if (!this.entitlements()?.analytics) {
       this.analytics.set(null);
@@ -165,6 +187,11 @@ export class BusinessDashboardComponent implements OnDestroy {
   }
 
   setAnalyticsDays(days: 7 | 30 | 90): void { this.analyticsDays.set(days); this.loadAnalytics(); }
+
+  performanceBarWidth(items: Array<{ views: number }>, views: number): number {
+    const maximum = Math.max(...items.map((item) => item.views), 1);
+    return Math.max(8, Math.round((views / maximum) * 100));
+  }
 
   promoteListing(property: Property): void {
     const config = this.promotionConfigs().find((item) => item.type === 'FEATURED' && item.isActive);

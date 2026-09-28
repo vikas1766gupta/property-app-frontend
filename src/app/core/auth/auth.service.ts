@@ -32,6 +32,10 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${this.baseUrl}/buyer/register`, { email, password });
   }
 
+  registerAdmin(email: string, password: string) {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/admin/register`, { email, password });
+  }
+
   storeToken(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
     this.isLoggedIn.set(true);

@@ -1,4 +1,33 @@
-<div class="section">
+<div class="dashboard-shell">
+  <div class="dashboard-backdrop" [class.visible]="sidebarOpen()" (click)="toggleSidebar()" aria-hidden="true"></div>
+  <aside class="dashboard-sidebar" [class.open]="sidebarOpen()" aria-label="Business dashboard navigation">
+    <div class="sidebar-topline"><div class="sidebar-brand"><img class="brand-mark" src="assets/propertyhub-mark.svg" alt="" /><div><strong>PropertyHub</strong><small>Business workspace</small></div></div><button class="sidebar-close" type="button" (click)="toggleSidebar()" aria-label="Close navigation">&times;</button></div>
+    <nav class="dashboard-nav">
+      <button type="button" *ngFor="let item of [
+        { id: 'overview', label: 'Overview', icon: '⌂' }, { id: 'listings', label: 'Listings', icon: '▤' }, { id: 'leads', label: 'Leads & CRM', icon: '↗' },
+        { id: 'analytics', label: 'Analytics', icon: '◌' }, { id: 'promotions', label: 'Promotions', icon: '✦' }, { id: 'subscription', label: 'Subscription', icon: '◷' },
+        { id: 'profile', label: 'Profile', icon: '●' }, { id: 'settings', label: 'Settings', icon: '⚙' }
+      ]" [class.active]="activeSection() === item.id" (click)="navigate($any(item.id))"><span class="nav-icon" [attr.data-label]="item.icon" aria-hidden="true"></span><span>{{ item.label }}</span></button>
+    </nav>
+    <button type="button" class="sidebar-logout" (click)="logout()"><span class="nav-icon" data-label="↪" aria-hidden="true"></span><span>Log out</span></button>
+  </aside>
+
+  <main class="dashboard-main">
+    <div class="mobile-dashboard-toolbar">
+      <button class="mobile-menu-button" type="button" (click)="toggleSidebar()" aria-label="Open navigation" [attr.aria-expanded]="sidebarOpen()">☰</button>
+      <span>PropertyHub</span>
+    </div>
+    <header class="workspace-header">
+      <div><span class="eyebrow">Business workspace</span><h1>{{ sectionLabel() }}</h1><p>{{ profile()?.companyName || profile()?.displayName || 'Manage your property business' }}</p></div>
+      <div class="workspace-actions"><a routerLink="/properties">Browse marketplace</a><button uiButton type="button" (click)="logout()">Log out</button></div>
+    </header>
+
+    <section class="overview-welcome" *ngIf="activeSection() === 'overview'" aria-labelledby="overview-heading">
+      <div class="welcome-content"><span class="eyebrow">Today at a glance</span><h2 id="overview-heading">Welcome back{{ profile()?.displayName ? ', ' + profile()?.displayName : '' }}.</h2><p>Keep your inventory visible, respond to buyers, and grow your business from one workspace.</p></div><img class="welcome-illustration" src="assets/welcome-buildings.svg" alt="" />
+      <div class="overview-actions"><button uiButton="primary" type="button" (click)="navigate('listings'); openCreateForm()">+ New listing</button><button uiButton type="button" (click)="navigate('profile')">Edit profile</button></div>
+    </section>
+
+  <section class="section" *ngIf="activeSection() === 'profile'">
   <section class="profile-editor" aria-labelledby="profile-heading">
     <h2 id="profile-heading">Business profile</h2>
     <ui-skeleton *ngIf="profileLoading()" variant="row" [count]="2" label="Loading profile" />
@@ -19,31 +48,41 @@
     <textarea uiInput maxlength="1000" rows="3" placeholder="About your business" *ngIf="!profileLoading() && profile()" [(ngModel)]="profileForm.bio"></textarea>
     <button uiButton="primary" type="button" *ngIf="!profileLoading() && profile()" (click)="saveProfile()" [disabled]="profileSaving()">{{ profileSaving() ? 'Saving…' : 'Save profile' }}</button>
   </section>
-
-  <section class="entitlement-strip" *ngIf="entitlements() as access" aria-labelledby="plan-heading">
-    <div><span class="eyebrow">Current plan</span><h2 id="plan-heading">{{ access.name }}</h2></div>
-    <div><strong>{{ access.listingUsage }} / {{ access.maxActiveListings }}</strong><span> active listings</span></div>
-    <div><strong>{{ access.featuredCredits }}</strong><span> featured credits</span></div>
-    <div><strong>{{ access.analytics ? 'Included' : 'Not included' }}</strong><span> analytics</span></div>
-    <div><strong>{{ access.subscriptionId ? (access.subscriptionStatus || 'Active') : 'Free' }}</strong><span> subscription</span></div>
-    <div *ngIf="access.subscriptionId"><strong>{{ access.currentPeriodEnd | date: 'mediumDate' }}</strong><span> renewal date</span></div>
-    <div class="available-features"><span *ngIf="access.leadManagement">Lead CRM</span><span *ngIf="access.analytics">Analytics</span><span *ngIf="access.priorityVisibility">Priority visibility</span><span *ngIf="access.projectListingAccess">Project listings</span><span *ngIf="access.featuredCredits > 0">{{ access.featuredCredits }} featured credits</span></div>
-    <a routerLink="/pricing">Compare plans</a>
   </section>
 
-  <section class="analytics-panel" aria-labelledby="analytics-heading">
-    <div class="section-heading"><div><span class="eyebrow">Performance</span><h2 id="analytics-heading">Analytics</h2></div><div class="range-picker" *ngIf="entitlements()?.analytics"><button uiButton [class.active]="analyticsDays() === 7" type="button" (click)="setAnalyticsDays(7)">7 days</button><button uiButton [class.active]="analyticsDays() === 30" type="button" (click)="setAnalyticsDays(30)">30 days</button><button uiButton [class.active]="analyticsDays() === 90" type="button" (click)="setAnalyticsDays(90)">90 days</button></div></div>
+  <section class="entitlement-strip" *ngIf="activeSection() === 'overview' && entitlements() as access" aria-labelledby="plan-heading">
+    <div class="plan-heading"><span class="eyebrow">Current plan</span><h2 id="plan-heading">{{ access.name }}</h2><span class="plan-status">{{ access.subscriptionId ? (access.subscriptionStatus || 'Active') : 'Free subscription' }}</span></div>
+    <div class="plan-stat"><span class="plan-stat-icon" aria-hidden="true">⌂</span><div><strong>{{ access.listingUsage }} / {{ access.maxActiveListings }}</strong><span>active listings</span></div></div>
+    <div class="plan-stat"><span class="plan-stat-icon" aria-hidden="true">✦</span><div><strong>{{ access.featuredCredits }}</strong><span>featured credits</span></div></div>
+    <div class="plan-stat"><span class="plan-stat-icon" aria-hidden="true">↗</span><div><strong>{{ access.analytics ? 'Included' : 'Not included' }}</strong><span>analytics</span></div></div>
+    <div class="plan-stat"><span class="plan-stat-icon" aria-hidden="true">◷</span><div><strong>{{ access.subscriptionId ? (access.subscriptionStatus || 'Active') : 'Free' }}</strong><span>subscription</span></div></div>
+    <div class="plan-stat plan-renewal" *ngIf="access.subscriptionId"><span class="plan-stat-icon" aria-hidden="true">▣</span><div><strong>{{ access.currentPeriodEnd | date: 'mediumDate' }}</strong><span>renewal date</span></div></div>
+    <div class="available-features"><span *ngIf="access.leadManagement">Lead CRM</span><span *ngIf="access.analytics">Analytics</span><span *ngIf="access.priorityVisibility">Priority visibility</span><span *ngIf="access.projectListingAccess">Project listings</span><span *ngIf="access.featuredCredits > 0">{{ access.featuredCredits }} featured credits</span></div>
+    <a class="plan-link" routerLink="/pricing">Compare plans <span aria-hidden="true">→</span></a>
+  </section>
+
+  <section class="analytics-panel" *ngIf="activeSection() === 'overview' || activeSection() === 'analytics'" aria-labelledby="analytics-heading">
+    <div class="analytics-heading"><div><span class="eyebrow">Performance</span><h2 id="analytics-heading">Analytics</h2><p>Track how your property business is performing.</p></div><div class="range-picker" *ngIf="entitlements()?.analytics" role="group" aria-label="Analytics period"><button type="button" [class.active]="analyticsDays() === 7" [attr.aria-pressed]="analyticsDays() === 7" (click)="setAnalyticsDays(7)">7 days</button><button type="button" [class.active]="analyticsDays() === 30" [attr.aria-pressed]="analyticsDays() === 30" (click)="setAnalyticsDays(30)">30 days</button><button type="button" [class.active]="analyticsDays() === 90" [attr.aria-pressed]="analyticsDays() === 90" (click)="setAnalyticsDays(90)">90 days</button></div></div>
     <div class="analytics-upgrade" *ngIf="entitlements() && !entitlements()?.analytics; else analyticsContent"><strong>Analytics is available on Pro and Business plans.</strong><a routerLink="/pricing">Compare plans</a></div>
     <ng-template #analyticsContent>
     <ui-toast [message]="analyticsError()" tone="error" />
     <div class="analytics-grid" *ngIf="analytics() as stats">
-      <div><strong>{{ stats.propertyViews | number }}</strong><span>property views</span></div><div><strong>{{ stats.enquiries | number }}</strong><span>enquiries</span></div><div><strong>{{ stats.contactActions | number }}</strong><span>contact actions</span></div><div><strong>{{ stats.favorites | number }}</strong><span>favorites</span></div><div><strong>{{ stats.conversionToLead }}%</strong><span>lead conversion</span></div>
+      <article class="analytics-card"><span class="metric-icon" aria-hidden="true">⌂</span><strong>{{ stats.propertyViews | number }}</strong><span class="metric-label">Property views</span><span class="metric-context">Selected {{ stats.range.days }}-day period</span></article><article class="analytics-card"><span class="metric-icon" aria-hidden="true">↗</span><strong>{{ stats.enquiries | number }}</strong><span class="metric-label">Enquiries</span><span class="metric-context">Selected {{ stats.range.days }}-day period</span></article><article class="analytics-card"><span class="metric-icon" aria-hidden="true">◌</span><strong>{{ stats.contactActions | number }}</strong><span class="metric-label">Contact actions</span><span class="metric-context">Selected {{ stats.range.days }}-day period</span></article><article class="analytics-card"><span class="metric-icon" aria-hidden="true">♡</span><strong>{{ stats.favorites | number }}</strong><span class="metric-label">Favorites</span><span class="metric-context">Selected {{ stats.range.days }}-day period</span></article><article class="analytics-card analytics-card--conversion"><span class="metric-icon" aria-hidden="true">%</span><strong>{{ stats.conversionToLead }}%</strong><span class="metric-label">Lead conversion</span><span class="metric-context">Enquiries becoming leads</span></article>
     </div>
     <div class="top-performance" *ngIf="analytics()?.topProperties?.length"><h3>Top-performing properties</h3><div *ngFor="let item of analytics()!.topProperties"><span>{{ item.name }}</span><strong>{{ item.views }} views · {{ item.enquiries }} enquiries</strong></div></div>
     <div class="top-performance" *ngIf="profile()?.accountType === 'BUILDER' && builderAnalytics() as stats"><h3>Project performance</h3><p>{{ stats.projectViews }} views · {{ stats.enquiries }} enquiries · {{ stats.enquiryConversion }}% conversion</p><div *ngFor="let item of stats.topProjects"><span>{{ item.name }}</span><strong>{{ item.views }} views · {{ item.enquiries }} enquiries</strong></div></div>
     </ng-template>
   </section>
 
+  <section class="recent-activity" *ngIf="activeSection() === 'overview'" aria-labelledby="activity-heading">
+    <div class="activity-heading"><div><span class="eyebrow">Stay responsive</span><h2 id="activity-heading">Recent activity</h2><p>Keep up with the latest buyer interest in your listings.</p></div><button uiButton="quiet" type="button" (click)="navigate('leads')">View all leads <span aria-hidden="true">→</span></button></div>
+    <div class="activity-list" *ngIf="leads().length > 0; else noRecentActivity">
+      <button class="activity-item" type="button" *ngFor="let lead of leads().slice(0, 4); trackBy: trackByLeadId" (click)="openLead(lead)"><span class="activity-avatar" aria-hidden="true">{{ lead.name.slice(0, 1).toUpperCase() }}</span><span class="activity-copy"><strong>{{ lead.name }}</strong><span>Enquired about {{ lead.propertyTitle }}</span></span><span class="activity-meta"><b>{{ lead.status.replace('_', ' ') }}</b><small>{{ lead.createdAt | date: 'mediumDate' }}</small></span><span class="activity-arrow" aria-hidden="true">→</span></button>
+    </div>
+    <ng-template #noRecentActivity><div class="activity-empty">New buyer enquiries will appear here.</div></ng-template>
+  </section>
+
+  <ng-container *ngIf="activeSection() === 'listings' || activeSection() === 'promotions'">
   <header class="dash-header">
     <h1>Your listings</h1>
     <div class="header-actions">
@@ -194,6 +233,9 @@
   </table>
   </div>
 
+  </ng-container>
+
+  <ng-container *ngIf="activeSection() === 'leads'">
   <section class="leads-section" aria-labelledby="leads-heading" *ngIf="entitlements()?.leadManagement; else leadUpgrade">
     <h2 id="leads-heading">Leads / CRM <span>{{ leadSummary().total }}</span></h2>
     <div class="lead-summary-grid">
@@ -234,7 +276,23 @@
       <pre *ngIf="lead.notes">{{ lead.notes }}</pre>
     </section>
   </ui-modal>
+  </ng-container>
 
+  <section class="settings-section" *ngIf="activeSection() === 'settings'" aria-labelledby="settings-heading">
+    <span class="eyebrow">Workspace controls</span><h2 id="settings-heading">Manage your workspace</h2><p class="section-intro">Update your business details, plan, and account session from one place.</p>
+    <div class="settings-grid">
+      <article><span class="settings-icon">PR</span><div><h3>Business profile</h3><p>Public details, contact information, location, and description.</p><button uiButton type="button" (click)="navigate('profile')">Open profile</button></div></article>
+      <article><span class="settings-icon">PL</span><div><h3>Plan and billing</h3><p>Review entitlements and compare available business plans.</p><button uiButton type="button" (click)="navigate('subscription')">View subscription</button></div></article>
+      <article><span class="settings-icon">AC</span><div><h3>Account session</h3><p>Sign out of this browser when you finish managing your workspace.</p><button uiButton type="button" (click)="logout()">Log out</button></div></article>
+    </div>
+  </section>
+
+  <section class="subscription-section" *ngIf="activeSection() === 'subscription'" aria-labelledby="subscription-heading">
+    <span class="eyebrow">Plan and billing</span><h2 id="subscription-heading">Your subscription</h2>
+    <div class="subscription-card" *ngIf="entitlements() as access"><div><span class="eyebrow">Current plan</span><h3>{{ access.name }}</h3><p>{{ access.subscriptionId ? (access.subscriptionStatus || 'Active') : 'Free subscription' }}</p></div><div><strong>{{ access.listingUsage }} / {{ access.maxActiveListings }}</strong><span> active listings</span></div><div><strong>{{ access.featuredCredits }}</strong><span> featured credits</span></div><a uiButton="primary" routerLink="/pricing">Compare plans</a></div>
+  </section>
+
+  <ng-container *ngIf="activeSection() === 'subscription'">
   <h2 class="payments-heading">Payment history</h2>
   <ui-toast [message]="paymentsError()" tone="error" />
   <ui-skeleton *ngIf="paymentsLoading()" variant="row" [count]="3" label="Loading payment history" />
@@ -257,4 +315,6 @@
     </tbody>
   </table>
   </div>
+  </ng-container>
+  </main>
 </div>
