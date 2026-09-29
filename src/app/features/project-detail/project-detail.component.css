@@ -1,1 +1,95 @@
-.detail{max-width:1180px;margin:auto;padding:32px 24px}.detail a{color:#92400e}.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:44px;margin:32px 0 48px;align-items:center}.hero img{width:100%;aspect-ratio:4/3;object-fit:cover;background:#e7e5e4}.hero h1{font-size:clamp(2.2rem,6vw,5rem);line-height:1.02;margin:8px 0}.eyebrow{color:#b45309;text-transform:uppercase;letter-spacing:2px;font-size:12px}.facts{display:flex;gap:24px;flex-wrap:wrap;margin-top:28px}.facts b{display:block;font-size:1.4rem}.content{display:grid;grid-template-columns:1fr 380px;gap:60px;border-top:1px solid #d6d3d1;padding-top:32px}.enquiry{border:1px solid #d6d3d1;padding:24px;display:grid;gap:12px}.enquiry input,.enquiry textarea,.enquiry button{font:inherit;padding:12px;border:1px solid #d6d3d1}.enquiry button{background:#1c1917;color:#fff;cursor:pointer}.amenity{display:inline-block;margin:4px 8px 4px 0;padding:7px 10px;background:#f5f5f4}.success{color:#166534}.similar{margin-top:48px;border-top:1px solid #d6d3d1;padding-top:24px}.similar a{display:block;margin:10px 0}@media(max-width:760px){.detail{padding:24px 16px}.hero,.content{grid-template-columns:1fr;gap:24px}}
+.detail {
+  max-width: 1180px;
+  margin: auto;
+  padding: 32px 24px;
+}
+.detail a {
+  color: #92400e;
+}
+.hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 44px;
+  margin: 32px 0 48px;
+  align-items: center;
+}
+.hero img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  background: #e7e5e4;
+}
+.hero h1 {
+  font-size: clamp(2.2rem, 6vw, 5rem);
+  line-height: 1.02;
+  margin: 8px 0;
+}
+.eyebrow {
+  color: #b45309;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 12px;
+}
+.facts {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+.facts b {
+  display: block;
+  font-size: 1.4rem;
+}
+.content {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 60px;
+  border-top: 1px solid #d6d3d1;
+  padding-top: 32px;
+}
+.enquiry {
+  border: 1px solid #d6d3d1;
+  padding: 24px;
+  display: grid;
+  gap: 12px;
+}
+.enquiry input,
+.enquiry textarea,
+.enquiry button {
+  font: inherit;
+  padding: 12px;
+  border: 1px solid #d6d3d1;
+}
+.enquiry button {
+  background: #1c1917;
+  color: #fff;
+  cursor: pointer;
+}
+.amenity {
+  display: inline-block;
+  margin: 4px 8px 4px 0;
+  padding: 7px 10px;
+  background: #f5f5f4;
+}
+.success {
+  color: #166534;
+}
+.similar {
+  margin-top: 48px;
+  border-top: 1px solid #d6d3d1;
+  padding-top: 24px;
+}
+.similar a {
+  display: block;
+  margin: 10px 0;
+}
+@media (max-width: 760px) {
+  .detail {
+    padding: 24px 16px;
+  }
+  .hero,
+  .content {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

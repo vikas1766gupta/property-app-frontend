@@ -1,35 +1,79 @@
-import { HttpClient, HttpEventType, HttpResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
-import { PropertyService } from '../../core/services/property.service';
-import { PaymentService, PaymentRecord } from '../../core/services/payment.service';
-import { Promotion, PromotionConfig, PromotionService } from '../../core/services/promotion.service';
-import { LeadService, BusinessLead, LeadStatus, LeadSummary } from '../../core/services/lead.service';
-import { AuthService } from '../../core/auth/auth.service';
-import { BusinessService } from '../../core/services/business.service';
-import { BusinessProfile, BusinessProfileUpdate } from '../../shared/models/business.model';
-import { Property, PropertyImageInput } from '../../shared/models/property.model';
-import { LocationPickerComponent, PickedLocation } from '../property-listing/location-picker.component';
-import { UiButtonDirective } from '../../shared/ui/button.directive';
-import { UiCardComponent } from '../../shared/ui/card.component';
-import { UiEmptyStateComponent } from '../../shared/ui/empty-state.component';
-import { UiInputDirective } from '../../shared/ui/input.directive';
-import { UiModalComponent } from '../../shared/ui/modal.component';
-import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
-import { UiToastComponent } from '../../shared/ui/toast.component';
-import { Entitlements, SubscriptionService } from '../../core/services/subscription.service';
-import { environment } from '../../../environments/environment';
-import { AnalyticsService, BusinessAnalyticsSummary, BuilderAnalyticsSummary } from '../../core/services/analytics.service';
+import { HttpClient, HttpEventType, HttpResponse } from "@angular/common/http";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  inject,
+  signal,
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { RouterLink } from "@angular/router";
+import { FormsModule } from "@angular/forms";
+import { Subscription } from "rxjs";
+import { PropertyService } from "../../core/services/property.service";
+import {
+  PaymentService,
+  PaymentRecord,
+} from "../../core/services/payment.service";
+import {
+  Promotion,
+  PromotionConfig,
+  PromotionService,
+} from "../../core/services/promotion.service";
+import {
+  LeadService,
+  BusinessLead,
+  LeadStatus,
+  LeadSummary,
+} from "../../core/services/lead.service";
+import { AuthService } from "../../core/auth/auth.service";
+import { BusinessService } from "../../core/services/business.service";
+import {
+  BusinessProfile,
+  BusinessProfileUpdate,
+} from "../../shared/models/business.model";
+import {
+  Property,
+  PropertyImageInput,
+} from "../../shared/models/property.model";
+import {
+  LocationPickerComponent,
+  PickedLocation,
+} from "../property-listing/location-picker.component";
+import { UiButtonDirective } from "../../shared/ui/button.directive";
+import { UiCardComponent } from "../../shared/ui/card.component";
+import { UiEmptyStateComponent } from "../../shared/ui/empty-state.component";
+import { UiInputDirective } from "../../shared/ui/input.directive";
+import { UiModalComponent } from "../../shared/ui/modal.component";
+import { UiSkeletonComponent } from "../../shared/ui/skeleton.component";
+import { UiToastComponent } from "../../shared/ui/toast.component";
+import {
+  Entitlements,
+  SubscriptionService,
+} from "../../core/services/subscription.service";
+import { environment } from "../../../environments/environment";
+import {
+  AnalyticsService,
+  BusinessAnalyticsSummary,
+  BuilderAnalyticsSummary,
+} from "../../core/services/analytics.service";
 
 declare const Stripe: any; // loaded via <script src="https://js.stripe.com/v3/"> in index.html
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_LISTING_IMAGES = 20;
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-type DashboardSection = 'overview' | 'listings' | 'leads' | 'analytics' | 'promotions' | 'subscription' | 'profile' | 'settings';
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+type DashboardSection =
+  | "overview"
+  | "listings"
+  | "leads"
+  | "analytics"
+  | "promotions"
+  | "subscription"
+  | "profile"
+  | "settings";
 
 interface ListingImageDraft {
   key: string;
@@ -44,36 +88,60 @@ interface ListingImageDraft {
 }
 
 @Component({
-  selector: 'app-business-dashboard',
+  selector: "app-business-dashboard",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LocationPickerComponent, UiButtonDirective, UiCardComponent, UiEmptyStateComponent, UiInputDirective, UiModalComponent, UiSkeletonComponent, UiToastComponent],
-  templateUrl: './business-dashboard.component.html',
-  styleUrl: './business-dashboard.component.css',
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    LocationPickerComponent,
+    UiButtonDirective,
+    UiCardComponent,
+    UiEmptyStateComponent,
+    UiInputDirective,
+    UiModalComponent,
+    UiSkeletonComponent,
+    UiToastComponent,
+  ],
+  templateUrl: "./business-dashboard.component.html",
+  styleUrl: "./business-dashboard.component.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BusinessDashboardComponent implements OnDestroy {
   private readonly propertyService = inject(PropertyService);
   private readonly paymentService = inject(PaymentService);
-  private readonly promotionService = inject(PromotionService, { optional: true });
+  private readonly promotionService = inject(PromotionService, {
+    optional: true,
+  });
   private readonly leadService = inject(LeadService);
   private readonly auth = inject(AuthService);
   private readonly businessService = inject(BusinessService);
   private readonly analyticsService = inject(AnalyticsService);
-  private readonly subscriptionService = inject(HttpClient, { optional: true }) ? inject(SubscriptionService) : null;
+  private readonly subscriptionService = inject(HttpClient, { optional: true })
+    ? inject(SubscriptionService)
+    : null;
 
-  @ViewChild('cardElementRef') cardElementRef?: ElementRef<HTMLDivElement>;
+  @ViewChild("cardElementRef") cardElementRef?: ElementRef<HTMLDivElement>;
 
   readonly listings = signal<Property[]>([]);
   readonly payments = signal<PaymentRecord[]>([]);
   readonly leads = signal<BusinessLead[]>([]);
   readonly leadsLoading = signal(true);
   readonly leadsError = signal<string | null>(null);
-  readonly leadSummary = signal<LeadSummary>({ total: 0, new: 0, contacted: 0, siteVisits: 0, negotiation: 0, closed: 0, invalid: 0 });
+  readonly leadSummary = signal<LeadSummary>({
+    total: 0,
+    new: 0,
+    contacted: 0,
+    siteVisits: 0,
+    negotiation: 0,
+    closed: 0,
+    invalid: 0,
+  });
   readonly leadTotal = signal(0);
   readonly leadPage = signal(1);
   readonly leadPageSize = 10;
-  readonly leadStatusFilter = signal<LeadStatus | ''>('');
-  readonly leadSourceFilter = signal('');
+  readonly leadStatusFilter = signal<LeadStatus | "">("");
+  readonly leadSourceFilter = signal("");
   readonly leadFollowUpDue = signal(false);
   readonly selectedLead = signal<BusinessLead | null>(null);
   readonly leadDetailLoading = signal(false);
@@ -83,9 +151,18 @@ export class BusinessDashboardComponent implements OnDestroy {
   readonly builderAnalytics = signal<BuilderAnalyticsSummary | null>(null);
   readonly analyticsDays = signal<7 | 30 | 90>(30);
   readonly analyticsError = signal<string | null>(null);
-  readonly leadNote = signal('');
-  readonly leadFollowUpAt = signal('');
-  readonly leadStatuses: LeadStatus[] = ['NEW', 'CONTACTED', 'INTERESTED', 'SITE_VISIT', 'NEGOTIATION', 'CLOSED', 'NOT_INTERESTED', 'INVALID'];
+  readonly leadNote = signal("");
+  readonly leadFollowUpAt = signal("");
+  readonly leadStatuses: LeadStatus[] = [
+    "NEW",
+    "CONTACTED",
+    "INTERESTED",
+    "SITE_VISIT",
+    "NEGOTIATION",
+    "CLOSED",
+    "NOT_INTERESTED",
+    "INVALID",
+  ];
   readonly freeRemaining = signal(0);
   readonly loading = signal(true);
   readonly showCreateForm = signal(false);
@@ -114,29 +191,37 @@ export class BusinessDashboardComponent implements OnDestroy {
   readonly promotionConfigs = signal<PromotionConfig[]>([]);
   readonly promotionMessage = signal<string | null>(null);
   readonly promotions = signal<Promotion[]>([]);
-  readonly activeSection = signal<DashboardSection>('overview');
+  readonly activeSection = signal<DashboardSection>("overview");
   readonly sidebarOpen = signal(false);
 
   profileForm: BusinessProfileUpdate = {
-    accountType: 'OWNER', displayName: '', companyName: '', profileImage: null, bio: '', yearsOfExperience: null,
-    phone: null, website: null, city: null, servedLocalities: [],
+    accountType: "OWNER",
+    displayName: "",
+    companyName: "",
+    profileImage: null,
+    bio: "",
+    yearsOfExperience: null,
+    phone: null,
+    website: null,
+    city: null,
+    servedLocalities: [],
   };
 
   // create-listing form model
   form = {
-    listingType: 'RENT' as 'RENT' | 'SALE',
-    title: '',
-    description: '',
+    listingType: "RENT" as "RENT" | "SALE",
+    title: "",
+    description: "",
     price: 0,
-    addressLine: '',
-    city: '',
-    state: '',
-    country: '',
+    addressLine: "",
+    city: "",
+    state: "",
+    country: "",
     bedrooms: undefined as number | null | undefined,
     bathrooms: undefined as number | null | undefined,
     areaSqft: undefined as number | null | undefined,
-    furnishingStatus: '',
-    amenities: '',
+    furnishingStatus: "",
+    amenities: "",
     latitude: undefined as number | null | undefined,
     longitude: undefined as number | null | undefined,
   };
@@ -147,7 +232,12 @@ export class BusinessDashboardComponent implements OnDestroy {
   private readonly imageUploadSubscriptions = new Map<string, Subscription>();
 
   constructor() {
-    this.promotionService?.configs().subscribe({ next: (configs) => this.promotionConfigs.set(configs), error: () => undefined });
+    this.promotionService
+      ?.configs()
+      .subscribe({
+        next: (configs) => this.promotionConfigs.set(configs),
+        error: () => undefined,
+      });
     this.refresh();
     this.loadProfile();
   }
@@ -155,18 +245,23 @@ export class BusinessDashboardComponent implements OnDestroy {
   navigate(section: DashboardSection): void {
     this.activeSection.set(section);
     this.sidebarOpen.set(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   toggleSidebar(): void {
     this.sidebarOpen.update((open) => !open);
   }
 
-
   sectionLabel(): string {
     const labels: Record<DashboardSection, string> = {
-      overview: 'Overview', listings: 'Listings', leads: 'Leads & CRM', analytics: 'Analytics',
-      promotions: 'Promotions', subscription: 'Subscription', profile: 'Profile', settings: 'Settings',
+      overview: "Overview",
+      listings: "Listings",
+      leads: "Leads & CRM",
+      analytics: "Analytics",
+      promotions: "Promotions",
+      subscription: "Subscription",
+      profile: "Profile",
+      settings: "Settings",
     };
     return labels[this.activeSection()];
   }
@@ -180,13 +275,26 @@ export class BusinessDashboardComponent implements OnDestroy {
     }
     const days = this.analyticsDays();
     this.analyticsError.set(null);
-    this.analyticsService.business(days).subscribe({ next: (data) => this.analytics.set(data), error: () => this.analyticsError.set('Analytics could not be loaded.') });
-    if (this.profile()?.accountType === 'BUILDER') {
-      this.analyticsService.builder(days).subscribe({ next: (data) => this.builderAnalytics.set(data), error: () => undefined });
+    this.analyticsService
+      .business(days)
+      .subscribe({
+        next: (data) => this.analytics.set(data),
+        error: () => this.analyticsError.set("Analytics could not be loaded."),
+      });
+    if (this.profile()?.accountType === "BUILDER") {
+      this.analyticsService
+        .builder(days)
+        .subscribe({
+          next: (data) => this.builderAnalytics.set(data),
+          error: () => undefined,
+        });
     }
   }
 
-  setAnalyticsDays(days: 7 | 30 | 90): void { this.analyticsDays.set(days); this.loadAnalytics(); }
+  setAnalyticsDays(days: 7 | 30 | 90): void {
+    this.analyticsDays.set(days);
+    this.loadAnalytics();
+  }
 
   performanceBarWidth(items: Array<{ views: number }>, views: number): number {
     const maximum = Math.max(...items.map((item) => item.views), 1);
@@ -194,24 +302,51 @@ export class BusinessDashboardComponent implements OnDestroy {
   }
 
   promoteListing(property: Property): void {
-    const config = this.promotionConfigs().find((item) => item.type === 'FEATURED' && item.isActive);
-    if (!config) { this.promotionMessage.set('No listing promotion is currently available.'); return; }
-    this.promotionService?.purchase('PROPERTY', property.id, config.type).subscribe({
-      next: ({ checkout }) => {
-        if (!checkout) { this.promotionMessage.set('Promotion activated.'); return; }
-        this.showCheckout.set(true);
-        this.checkoutError.set(null);
-        this.checkoutMessage.set(null);
-        this.checkoutLoading.set(false);
-        setTimeout(() => this.mountStripeCard(checkout.clientSecret), 0);
-      },
-      error: (error) => this.promotionMessage.set(error?.error?.error ?? 'Promotion could not be started.'),
-    });
+    const config = this.promotionConfigs().find(
+      (item) => item.type === "FEATURED" && item.isActive,
+    );
+    if (!config) {
+      this.promotionMessage.set("No listing promotion is currently available.");
+      return;
+    }
+    this.promotionService
+      ?.purchase("PROPERTY", property.id, config.type)
+      .subscribe({
+        next: ({ checkout }) => {
+          if (!checkout) {
+            this.promotionMessage.set("Promotion activated.");
+            return;
+          }
+          this.showCheckout.set(true);
+          this.checkoutError.set(null);
+          this.checkoutMessage.set(null);
+          this.checkoutLoading.set(false);
+          setTimeout(() => this.mountStripeCard(checkout.clientSecret), 0);
+        },
+        error: (error) =>
+          this.promotionMessage.set(
+            error?.error?.error ?? "Promotion could not be started.",
+          ),
+      });
   }
 
   hasActivePromotion(propertyId: string): boolean {
     const now = Date.now();
-    return this.promotions().some((promotion) => promotion.propertyId === propertyId && promotion.status === 'ACTIVE' && new Date(promotion.endAt).getTime() > now);
+    return this.promotions().some(
+      (promotion) =>
+        promotion.propertyId === propertyId &&
+        promotion.status === "ACTIVE" &&
+        new Date(promotion.endAt).getTime() > now,
+    );
+  }
+
+  promotionTargetLabel(promotion: Promotion): string {
+    if (promotion.propertyId)
+      return (
+        this.listings().find((property) => property.id === promotion.propertyId)
+          ?.title ?? `Property ${promotion.propertyId}`
+      );
+    return promotion.projectId ? `Project ${promotion.projectId}` : "Promotion";
   }
 
   ngOnDestroy(): void {
@@ -229,19 +364,34 @@ export class BusinessDashboardComponent implements OnDestroy {
       },
       error: () => {
         this.loading.set(false);
-        this.listingLoadError.set('Listings could not be loaded. Refresh to try again.');
+        this.listingLoadError.set(
+          "Listings could not be loaded. Refresh to try again.",
+        );
       },
     });
-    this.promotionService?.mine().subscribe({ next: (promotions) => this.promotions.set(promotions), error: () => undefined });
+    this.promotionService
+      ?.mine()
+      .subscribe({
+        next: (promotions) => this.promotions.set(promotions),
+        error: () => undefined,
+      });
     this.freeRemainingError.set(null);
     this.propertyService.freeListingsRemaining().subscribe({
       next: (result) => this.freeRemaining.set(result.remaining),
-      error: () => this.freeRemainingError.set('Free listing allowance could not be loaded.'),
+      error: () =>
+        this.freeRemainingError.set(
+          "Free listing allowance could not be loaded.",
+        ),
     });
     this.subscriptionService?.entitlements().subscribe({
       next: (entitlements) => {
         this.entitlements.set(entitlements);
-        this.freeRemaining.set(Math.max(0, entitlements.maxActiveListings - entitlements.listingUsage));
+        this.freeRemaining.set(
+          Math.max(
+            0,
+            entitlements.maxActiveListings - entitlements.listingUsage,
+          ),
+        );
         this.loadAnalytics();
       },
       error: () => undefined,
@@ -255,43 +405,99 @@ export class BusinessDashboardComponent implements OnDestroy {
       },
       error: () => {
         this.paymentsLoading.set(false);
-        this.paymentsError.set('Payment history could not be loaded.');
+        this.paymentsError.set("Payment history could not be loaded.");
       },
     });
     this.loadLeads();
-    this.leadService.summary().subscribe({ next: (summary) => this.leadSummary.set(summary), error: () => undefined });
+    this.leadService
+      .summary()
+      .subscribe({
+        next: (summary) => this.leadSummary.set(summary),
+        error: () => undefined,
+      });
   }
 
   loadLeads(): void {
     this.leadsLoading.set(true);
     this.leadsError.set(null);
-    this.leadService.list({ status: this.leadStatusFilter() || undefined, source: this.leadSourceFilter().trim() || undefined, followUpDue: this.leadFollowUpDue() || undefined, page: this.leadPage(), pageSize: this.leadPageSize }).subscribe({
-      next: (result) => { this.leads.set(result.items); this.leadTotal.set(result.total); this.leadsLoading.set(false); },
-      error: () => { this.leadsLoading.set(false); this.leadsError.set('Unable to load leads. Please refresh to try again.'); },
-    });
+    this.leadService
+      .list({
+        status: this.leadStatusFilter() || undefined,
+        source: this.leadSourceFilter().trim() || undefined,
+        followUpDue: this.leadFollowUpDue() || undefined,
+        page: this.leadPage(),
+        pageSize: this.leadPageSize,
+      })
+      .subscribe({
+        next: (result) => {
+          this.leads.set(result.items);
+          this.leadTotal.set(result.total);
+          this.leadsLoading.set(false);
+        },
+        error: () => {
+          this.leadsLoading.set(false);
+          this.leadsError.set(
+            "Unable to load leads. Please refresh to try again.",
+          );
+        },
+      });
   }
 
-  resetLeadFilters(): void { this.leadPage.set(1); this.loadLeads(); }
-  previousLeadPage(): void { if (this.leadPage() > 1) { this.leadPage.update((page) => page - 1); this.loadLeads(); } }
-  nextLeadPage(): void { if (this.leadPage() * this.leadPageSize < this.leadTotal()) { this.leadPage.update((page) => page + 1); this.loadLeads(); } }
+  resetLeadFilters(): void {
+    this.leadPage.set(1);
+    this.loadLeads();
+  }
+  previousLeadPage(): void {
+    if (this.leadPage() > 1) {
+      this.leadPage.update((page) => page - 1);
+      this.loadLeads();
+    }
+  }
+  nextLeadPage(): void {
+    if (this.leadPage() * this.leadPageSize < this.leadTotal()) {
+      this.leadPage.update((page) => page + 1);
+      this.loadLeads();
+    }
+  }
 
   openLead(lead: BusinessLead): void {
     this.selectedLead.set(lead);
     this.leadDetailLoading.set(true);
     this.leadDetailError.set(null);
     this.leadService.getById(lead.id).subscribe({
-      next: (detail) => { this.selectedLead.set(detail); this.leadDetailLoading.set(false); },
-      error: () => { this.leadDetailLoading.set(false); this.leadDetailError.set('Lead details could not be loaded.'); },
+      next: (detail) => {
+        this.selectedLead.set(detail);
+        this.leadDetailLoading.set(false);
+      },
+      error: () => {
+        this.leadDetailLoading.set(false);
+        this.leadDetailError.set("Lead details could not be loaded.");
+      },
     });
   }
 
-  closeLead(): void { this.selectedLead.set(null); this.leadActionError.set(null); this.leadNote.set(''); this.leadFollowUpAt.set(''); }
+  closeLead(): void {
+    this.selectedLead.set(null);
+    this.leadActionError.set(null);
+    this.leadNote.set("");
+    this.leadFollowUpAt.set("");
+  }
 
   changeLeadStatus(lead: BusinessLead, status: LeadStatus): void {
     this.leadActionError.set(null);
     this.leadService.updateStatus(lead.id, status).subscribe({
-      next: (updated) => { this.replaceLead(updated); this.leadService.summary().subscribe((summary) => this.leadSummary.set(summary)); },
-      error: (error) => { this.leadActionError.set(error?.error?.error ?? 'Lead status could not be updated.'); this.loadLeads(); },
+      next: (updated) => {
+        this.replaceLead(updated);
+        this.leadService
+          .summary()
+          .subscribe((summary) => this.leadSummary.set(summary));
+      },
+      error: (error) => {
+        this.leadActionError.set(
+          error?.error?.error ?? "Lead status could not be updated.",
+        );
+        this.loadLeads();
+      },
     });
   }
 
@@ -299,17 +505,36 @@ export class BusinessDashboardComponent implements OnDestroy {
     const lead = this.selectedLead();
     const note = this.leadNote().trim();
     if (!lead || !note) return;
-    this.leadService.addNote(lead.id, note).subscribe({ next: (updated) => { this.replaceLead(updated); this.leadNote.set(''); }, error: () => this.leadActionError.set('Note could not be saved.') });
+    this.leadService.addNote(lead.id, note).subscribe({
+      next: (updated) => {
+        this.replaceLead(updated);
+        this.leadNote.set("");
+      },
+      error: () => this.leadActionError.set("Note could not be saved."),
+    });
   }
 
   scheduleLeadFollowUp(): void {
     const lead = this.selectedLead();
     if (!lead || !this.leadFollowUpAt()) return;
-    this.leadService.scheduleFollowUp(lead.id, new Date(this.leadFollowUpAt()).toISOString()).subscribe({ next: (updated) => { this.replaceLead(updated); this.leadFollowUpAt.set(''); }, error: (error) => this.leadActionError.set(error?.error?.error ?? 'Follow-up could not be scheduled.') });
+    this.leadService
+      .scheduleFollowUp(lead.id, new Date(this.leadFollowUpAt()).toISOString())
+      .subscribe({
+        next: (updated) => {
+          this.replaceLead(updated);
+          this.leadFollowUpAt.set("");
+        },
+        error: (error) =>
+          this.leadActionError.set(
+            error?.error?.error ?? "Follow-up could not be scheduled.",
+          ),
+      });
   }
 
   private replaceLead(updated: BusinessLead): void {
-    this.leads.update((leads) => leads.map((lead) => lead.id === updated.id ? updated : lead));
+    this.leads.update((leads) =>
+      leads.map((lead) => (lead.id === updated.id ? updated : lead)),
+    );
     this.selectedLead.set(updated);
   }
 
@@ -322,10 +547,10 @@ export class BusinessDashboardComponent implements OnDestroy {
         this.profile.set(profile);
         this.profileForm = {
           accountType: profile.accountType,
-          displayName: profile.displayName ?? '',
+          displayName: profile.displayName ?? "",
           companyName: profile.companyName,
           profileImage: profile.profileImage,
-          bio: profile.bio ?? '',
+          bio: profile.bio ?? "",
           yearsOfExperience: profile.yearsOfExperience,
           phone: profile.phone,
           website: profile.website,
@@ -333,11 +558,22 @@ export class BusinessDashboardComponent implements OnDestroy {
           servedLocalities: [...profile.servedLocalities],
         };
         this.profileLoading.set(false);
-        if (this.entitlements()?.analytics && profile.accountType === 'BUILDER') {
-          this.analyticsService.builder(this.analyticsDays()).subscribe({ next: (data) => this.builderAnalytics.set(data), error: () => undefined });
+        if (
+          this.entitlements()?.analytics &&
+          profile.accountType === "BUILDER"
+        ) {
+          this.analyticsService
+            .builder(this.analyticsDays())
+            .subscribe({
+              next: (data) => this.builderAnalytics.set(data),
+              error: () => undefined,
+            });
         }
       },
-      error: () => { this.profileLoading.set(false); this.profileError.set('Profile could not be loaded.'); },
+      error: () => {
+        this.profileLoading.set(false);
+        this.profileError.set("Profile could not be loaded.");
+      },
     });
   }
 
@@ -346,10 +582,24 @@ export class BusinessDashboardComponent implements OnDestroy {
     this.profileSaving.set(true);
     this.profileError.set(null);
     this.profileMessage.set(null);
-    const payload = { ...this.profileForm, servedLocalities: this.profileForm.servedLocalities?.map((locality) => locality.trim()).filter(Boolean) };
+    const payload = {
+      ...this.profileForm,
+      servedLocalities: this.profileForm.servedLocalities
+        ?.map((locality) => locality.trim())
+        .filter(Boolean),
+    };
     this.businessService.updateMine(payload).subscribe({
-      next: (profile) => { this.profile.set(profile); this.profileSaving.set(false); this.profileMessage.set('Profile updated.'); },
-      error: () => { this.profileSaving.set(false); this.profileError.set('Profile could not be updated. Check the details and try again.'); },
+      next: (profile) => {
+        this.profile.set(profile);
+        this.profileSaving.set(false);
+        this.profileMessage.set("Profile updated.");
+      },
+      error: () => {
+        this.profileSaving.set(false);
+        this.profileError.set(
+          "Profile could not be updated. Check the details and try again.",
+        );
+      },
     });
   }
 
@@ -370,19 +620,19 @@ export class BusinessDashboardComponent implements OnDestroy {
     this.editingPropertyId.set(null);
     this.listingError.set(null);
     this.form = {
-      listingType: 'RENT',
-      title: '',
-      description: '',
+      listingType: "RENT",
+      title: "",
+      description: "",
       price: 0,
-      addressLine: '',
-      city: '',
-      state: '',
-      country: '',
+      addressLine: "",
+      city: "",
+      state: "",
+      country: "",
       bedrooms: undefined,
       bathrooms: undefined,
       areaSqft: undefined,
-      furnishingStatus: '',
-      amenities: '',
+      furnishingStatus: "",
+      amenities: "",
       latitude: undefined,
       longitude: undefined,
     };
@@ -405,22 +655,24 @@ export class BusinessDashboardComponent implements OnDestroy {
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms,
       areaSqft: property.areaSqft,
-      furnishingStatus: property.furnishingStatus ?? '',
-      amenities: property.amenities.join(', '),
+      furnishingStatus: property.furnishingStatus ?? "",
+      amenities: property.amenities.join(", "),
       latitude: property.latitude ?? null,
       longitude: property.longitude ?? null,
     };
-    this.imageDrafts.set((property.imageRefs ?? []).map((image) => ({
-      key: image.id,
-      uploadId: image.id,
-      name: image.url.split('/').pop() || 'Listing image',
-      previewUrl: image.url,
-      file: null,
-      progress: 100,
-      uploading: false,
-      isCover: image.isCover,
-      error: null,
-    })));
+    this.imageDrafts.set(
+      (property.imageRefs ?? []).map((image) => ({
+        key: image.id,
+        uploadId: image.id,
+        name: image.url.split("/").pop() || "Listing image",
+        previewUrl: image.url,
+        file: null,
+        progress: 100,
+        uploading: false,
+        isCover: image.isCover,
+        error: null,
+      })),
+    );
     this.showCreateForm.set(true);
   }
 
@@ -440,7 +692,7 @@ export class BusinessDashboardComponent implements OnDestroy {
   onImageFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files) this.addImageFiles(Array.from(input.files));
-    input.value = '';
+    input.value = "";
   }
 
   onImageDragOver(event: DragEvent): void {
@@ -456,7 +708,8 @@ export class BusinessDashboardComponent implements OnDestroy {
   onImageDrop(event: DragEvent): void {
     event.preventDefault();
     this.imageDragActive.set(false);
-    if (event.dataTransfer?.files) this.addImageFiles(Array.from(event.dataTransfer.files));
+    if (event.dataTransfer?.files)
+      this.addImageFiles(Array.from(event.dataTransfer.files));
   }
 
   retryImageUpload(key: string): void {
@@ -470,7 +723,11 @@ export class BusinessDashboardComponent implements OnDestroy {
     const removed = this.imageDrafts().find((image) => image.key === key);
     if (removed) this.releaseImagePreview(removed.previewUrl);
     const remaining = this.imageDrafts().filter((image) => image.key !== key);
-    if (removed?.isCover && remaining.length && !remaining.some((image) => image.isCover)) {
+    if (
+      removed?.isCover &&
+      remaining.length &&
+      !remaining.some((image) => image.isCover)
+    ) {
       remaining[0] = { ...remaining[0], isCover: true };
     }
     this.imageDrafts.set(remaining);
@@ -485,33 +742,47 @@ export class BusinessDashboardComponent implements OnDestroy {
   }
 
   setCoverImage(key: string): void {
-    this.imageDrafts.update((images) => images.map((image) => ({ ...image, isCover: image.key === key })));
+    this.imageDrafts.update((images) =>
+      images.map((image) => ({ ...image, isCover: image.key === key })),
+    );
   }
 
   isListingDetailsValid(): boolean {
-    const validInteger = (value: number | null | undefined, minimum: number): boolean =>
-      value === undefined || value === null || (Number.isInteger(value) && value >= minimum);
+    const validInteger = (
+      value: number | null | undefined,
+      minimum: number,
+    ): boolean =>
+      value === undefined ||
+      value === null ||
+      (Number.isInteger(value) && value >= minimum);
 
-    return this.form.title.trim().length >= 5
-      && this.form.title.trim().length <= 150
-      && this.form.description.trim().length >= 20
-      && Number.isFinite(Number(this.form.price))
-      && Number(this.form.price) > 0
-      && this.form.addressLine.trim().length >= 3
-      && this.form.city.trim().length >= 2
-      && this.form.state.trim().length >= 2
-      && this.form.country.trim().length >= 2
-      && validInteger(this.form.bedrooms, 0)
-      && validInteger(this.form.bathrooms, 0)
-      && validInteger(this.form.areaSqft, 1);
+    return (
+      this.form.title.trim().length >= 5 &&
+      this.form.title.trim().length <= 150 &&
+      this.form.description.trim().length >= 20 &&
+      Number.isFinite(Number(this.form.price)) &&
+      Number(this.form.price) > 0 &&
+      this.form.addressLine.trim().length >= 3 &&
+      this.form.city.trim().length >= 2 &&
+      this.form.state.trim().length >= 2 &&
+      this.form.country.trim().length >= 2 &&
+      validInteger(this.form.bedrooms, 0) &&
+      validInteger(this.form.bathrooms, 0) &&
+      validInteger(this.form.areaSqft, 1)
+    );
   }
 
   canSaveListing(): boolean {
     const images = this.imageDrafts();
-    return !this.savingListing()
-      && this.isListingDetailsValid()
-      && images.every((image) => Boolean(image.uploadId) && !image.uploading && !image.error)
-      && (images.length === 0 || images.filter((image) => image.isCover).length === 1);
+    return (
+      !this.savingListing() &&
+      this.isListingDetailsValid() &&
+      images.every(
+        (image) => Boolean(image.uploadId) && !image.uploading && !image.error,
+      ) &&
+      (images.length === 0 ||
+        images.filter((image) => image.isCover).length === 1)
+    );
   }
 
   private addImageFiles(files: File[]): void {
@@ -519,9 +790,13 @@ export class BusinessDashboardComponent implements OnDestroy {
     const accepted: File[] = [];
     for (const file of files) {
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        this.imageUploadError.set(`${file.name}: choose a JPEG, PNG, or WebP image.`);
+        this.imageUploadError.set(
+          `${file.name}: choose a JPEG, PNG, or WebP image.`,
+        );
       } else if (file.size === 0 || file.size > MAX_IMAGE_BYTES) {
-        this.imageUploadError.set(`${file.name}: images must be larger than 0 bytes and no larger than 8 MB.`);
+        this.imageUploadError.set(
+          `${file.name}: images must be larger than 0 bytes and no larger than 8 MB.`,
+        );
       } else {
         accepted.push(file);
       }
@@ -529,7 +804,9 @@ export class BusinessDashboardComponent implements OnDestroy {
 
     const available = MAX_LISTING_IMAGES - this.imageDrafts().length;
     if (accepted.length > available) {
-      this.imageUploadError.set(`A listing can contain at most ${MAX_LISTING_IMAGES} images.`);
+      this.imageUploadError.set(
+        `A listing can contain at most ${MAX_LISTING_IMAGES} images.`,
+      );
     }
     accepted.slice(0, Math.max(0, available)).forEach((file) => {
       const key = crypto.randomUUID();
@@ -550,29 +827,58 @@ export class BusinessDashboardComponent implements OnDestroy {
   }
 
   private uploadImageDraft(key: string, file: File): void {
-    this.imageDrafts.update((images) => images.map((image) => image.key === key
-      ? { ...image, uploading: true, progress: 0, error: null }
-      : image));
+    this.imageDrafts.update((images) =>
+      images.map((image) =>
+        image.key === key
+          ? { ...image, uploading: true, progress: 0, error: null }
+          : image,
+      ),
+    );
     const subscription = this.propertyService.uploadImage(file).subscribe({
       next: (event) => {
         if (event.type === HttpEventType.UploadProgress) {
-          const progress = event.total ? Math.round((event.loaded / event.total) * 100) : 0;
-          this.imageDrafts.update((images) => images.map((image) => image.key === key ? { ...image, progress } : image));
+          const progress = event.total
+            ? Math.round((event.loaded / event.total) * 100)
+            : 0;
+          this.imageDrafts.update((images) =>
+            images.map((image) =>
+              image.key === key ? { ...image, progress } : image,
+            ),
+          );
         } else if (event.type === HttpEventType.Response) {
-          const uploadedImage = (event as HttpResponse<{ id: string; url: string }>).body;
+          const uploadedImage = (
+            event as HttpResponse<{ id: string; url: string }>
+          ).body;
           if (!uploadedImage) return;
-          this.imageDrafts.update((images) => images.map((image) => {
-            if (image.key !== key) return image;
-            this.releaseImagePreview(image.previewUrl);
-            return { ...image, uploadId: uploadedImage.id, previewUrl: uploadedImage.url, file: null, progress: 100, uploading: false };
-          }));
+          this.imageDrafts.update((images) =>
+            images.map((image) => {
+              if (image.key !== key) return image;
+              this.releaseImagePreview(image.previewUrl);
+              return {
+                ...image,
+                uploadId: uploadedImage.id,
+                previewUrl: uploadedImage.url,
+                file: null,
+                progress: 100,
+                uploading: false,
+              };
+            }),
+          );
           this.imageUploadSubscriptions.delete(key);
         }
       },
       error: (error) => {
-        this.imageDrafts.update((images) => images.map((image) => image.key === key
-          ? { ...image, uploading: false, error: `${error.error?.error || 'Upload failed.'} Retry or remove this image.` }
-          : image));
+        this.imageDrafts.update((images) =>
+          images.map((image) =>
+            image.key === key
+              ? {
+                  ...image,
+                  uploading: false,
+                  error: `${error.error?.error || "Upload failed."} Retry or remove this image.`,
+                }
+              : image,
+          ),
+        );
         this.imageUploadSubscriptions.delete(key);
       },
     });
@@ -580,15 +886,19 @@ export class BusinessDashboardComponent implements OnDestroy {
   }
 
   private clearImageDrafts(): void {
-    this.imageUploadSubscriptions.forEach((subscription) => subscription.unsubscribe());
+    this.imageUploadSubscriptions.forEach((subscription) =>
+      subscription.unsubscribe(),
+    );
     this.imageUploadSubscriptions.clear();
-    this.imageDrafts().forEach((image) => this.releaseImagePreview(image.previewUrl));
+    this.imageDrafts().forEach((image) =>
+      this.releaseImagePreview(image.previewUrl),
+    );
     this.imageDrafts.set([]);
     this.imageUploadError.set(null);
   }
 
   private releaseImagePreview(url: string): void {
-    if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+    if (url.startsWith("blob:")) URL.revokeObjectURL(url);
   }
 
   private saveListing(): void {
@@ -608,11 +918,17 @@ export class BusinessDashboardComponent implements OnDestroy {
       bedrooms: this.form.bedrooms,
       bathrooms: this.form.bathrooms,
       areaSqft: this.form.areaSqft,
-      furnishingStatus: this.form.furnishingStatus.trim() || (editingId ? null : undefined),
-      amenities: this.form.amenities ? this.form.amenities.split(',').map((a) => a.trim()) : [],
+      furnishingStatus:
+        this.form.furnishingStatus.trim() || (editingId ? null : undefined),
+      amenities: this.form.amenities
+        ? this.form.amenities.split(",").map((a) => a.trim())
+        : [],
       latitude: this.form.latitude,
       longitude: this.form.longitude,
-      imageRefs: this.imageDrafts().map((image): PropertyImageInput => ({ id: image.uploadId!, isCover: image.isCover })),
+      imageRefs: this.imageDrafts().map((image): PropertyImageInput => ({
+        id: image.uploadId!,
+        isCover: image.isCover,
+      })),
     };
 
     this.savingListing.set(true);
@@ -631,37 +947,43 @@ export class BusinessDashboardComponent implements OnDestroy {
       return;
     }
 
-    this.propertyService.create({
-      ...payload,
-      bedrooms: payload.bedrooms ?? undefined,
-      bathrooms: payload.bathrooms ?? undefined,
-      areaSqft: payload.areaSqft ?? undefined,
-      latitude: payload.latitude ?? undefined,
-      longitude: payload.longitude ?? undefined,
-    }).subscribe({
-      next: ({ property, requiresPayment }) => {
-        this.savingListing.set(false);
-        this.cancelListingForm();
-        if (requiresPayment) {
-          this.pendingPropertyId = property.id;
-          this.openCheckout(property.id);
-        } else {
-          this.refresh();
-        }
-      },
-      error: (error) => {
-        this.savingListing.set(false);
-        this.listingError.set(this.getSaveErrorMessage(error));
-      },
-    });
+    this.propertyService
+      .create({
+        ...payload,
+        bedrooms: payload.bedrooms ?? undefined,
+        bathrooms: payload.bathrooms ?? undefined,
+        areaSqft: payload.areaSqft ?? undefined,
+        latitude: payload.latitude ?? undefined,
+        longitude: payload.longitude ?? undefined,
+      })
+      .subscribe({
+        next: ({ property, requiresPayment }) => {
+          this.savingListing.set(false);
+          this.cancelListingForm();
+          if (requiresPayment) {
+            this.pendingPropertyId = property.id;
+            this.openCheckout(property.id);
+          } else {
+            this.refresh();
+          }
+        },
+        error: (error) => {
+          this.savingListing.set(false);
+          this.listingError.set(this.getSaveErrorMessage(error));
+        },
+      });
   }
 
   private getSaveErrorMessage(error: any): string {
     const body = error?.error;
-    const fieldErrors = body?.details?.fieldErrors as Record<string, string[]> | undefined;
-    const firstFieldError = Object.entries(fieldErrors ?? {}).find(([, messages]) => messages.length > 0);
-    if (firstFieldError) return `${firstFieldError[0]}: ${firstFieldError[1][0]}`;
-    return body?.error ?? 'Unable to save the listing. Please try again.';
+    const fieldErrors = body?.details?.fieldErrors as
+      Record<string, string[]> | undefined;
+    const firstFieldError = Object.entries(fieldErrors ?? {}).find(
+      ([, messages]) => messages.length > 0,
+    );
+    if (firstFieldError)
+      return `${firstFieldError[0]}: ${firstFieldError[1][0]}`;
+    return body?.error ?? "Unable to save the listing. Please try again.";
   }
 
   /* The following methods handle the separate payment flow for paid listings. */
@@ -679,18 +1001,23 @@ export class BusinessDashboardComponent implements OnDestroy {
         // Deferred so the *ngIf-rendered card container exists in the DOM first.
         setTimeout(() => this.mountStripeCard(clientSecret), 0);
       },
-      error: () => { this.checkoutLoading.set(false); this.checkoutError.set('Payment could not be initialized. Try again.'); },
+      error: () => {
+        this.checkoutLoading.set(false);
+        this.checkoutError.set("Payment could not be initialized. Try again.");
+      },
     });
   }
 
   private mountStripeCard(clientSecret: string): void {
     if (!environment.stripePublishableKey) {
-      this.checkoutError.set('Payments are not configured yet. Please try again later.');
+      this.checkoutError.set(
+        "Payments are not configured yet. Please try again later.",
+      );
       return;
     }
     if (!this.stripe) this.stripe = Stripe(environment.stripePublishableKey);
     const elements = this.stripe.elements();
-    this.cardElement = elements.create('card');
+    this.cardElement = elements.create("card");
     this.cardElement.mount(this.cardElementRef!.nativeElement);
     (this as any)._clientSecret = clientSecret;
   }
@@ -700,7 +1027,9 @@ export class BusinessDashboardComponent implements OnDestroy {
     this.checkoutError.set(null);
 
     this.stripe
-      .confirmCardPayment((this as any)._clientSecret, { payment_method: { card: this.cardElement } })
+      .confirmCardPayment((this as any)._clientSecret, {
+        payment_method: { card: this.cardElement },
+      })
       .then((result: any) => {
         this.checkoutProcessing.set(false);
         if (result.error) {
@@ -710,11 +1039,17 @@ export class BusinessDashboardComponent implements OnDestroy {
         // Actual publish happens server-side via the Stripe webhook; refresh
         // picks it up once that's processed (usually within a second or two).
         this.showCheckout.set(false);
-        this.checkoutMessage.set('Payment submitted. Your listing or promotion will activate after Stripe confirms it.');
+        this.checkoutMessage.set(
+          "Payment submitted. Your listing or promotion will activate after Stripe confirms it.",
+        );
         this.cardElement?.destroy();
         this.refresh();
       })
-      .catch(() => this.checkoutError.set('Payment could not be completed. Check your card and try again.'))
+      .catch(() =>
+        this.checkoutError.set(
+          "Payment could not be completed. Check your card and try again.",
+        ),
+      )
       .finally(() => this.checkoutProcessing.set(false));
   }
 
@@ -728,16 +1063,17 @@ export class BusinessDashboardComponent implements OnDestroy {
   }
 
   deleteListing(id: string): void {
-    if (!confirm('Delete this listing?')) return;
+    if (!confirm("Delete this listing?")) return;
     this.actionError.set(null);
     this.propertyService.delete(id).subscribe({
       next: () => this.refresh(),
-      error: () => this.actionError.set('Listing could not be deleted. Please try again.'),
+      error: () =>
+        this.actionError.set("Listing could not be deleted. Please try again."),
     });
   }
 
   logout(): void {
     this.auth.logout();
-    location.href = '/login';
+    location.href = "/login";
   }
 }

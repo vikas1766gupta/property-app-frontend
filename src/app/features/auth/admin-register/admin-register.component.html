@@ -2,24 +2,47 @@
   <ui-card class="auth-form">
     <p class="eyebrow">LOCAL ADMIN ACCESS</p>
     <h1>Create an admin account</h1>
-    <p class="auth-copy">Available only while the backend is running outside production.</p>
+    <p class="auth-copy">
+      Available only while the backend is running outside production.
+    </p>
 
     <label>
       Email
-      <input uiInput type="email" [(ngModel)]="email" name="email" autocomplete="email" required />
+      <input
+        uiInput
+        type="email"
+        [(ngModel)]="email"
+        name="email"
+        autocomplete="email"
+        required
+      />
     </label>
 
     <label>
       Password
-      <input uiInput type="password" [(ngModel)]="password" name="password" autocomplete="new-password" required />
+      <input
+        uiInput
+        type="password"
+        [(ngModel)]="password"
+        name="password"
+        autocomplete="new-password"
+        required
+      />
     </label>
 
     <ui-toast [message]="error()" tone="error" />
 
-    <button uiButton="primary" type="button" (click)="submit()" [disabled]="loading()">
-      {{ loading() ? 'Creating account...' : 'Create admin account' }}
+    <button
+      uiButton="primary"
+      type="button"
+      (click)="submit()"
+      [disabled]="loading()"
+    >
+      {{ loading() ? "Creating account..." : "Create admin account" }}
     </button>
 
-    <p class="auth-switch">Already registered? <a routerLink="/login">Log in</a></p>
+    <p class="auth-switch">
+      Already registered? <a routerLink="/login">Log in</a>
+    </p>
   </ui-card>
 </main>

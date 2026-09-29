@@ -2,24 +2,48 @@
   <ui-card class="auth-form">
     <p class="eyebrow">PROPERTYHUB ACCOUNT</p>
     <h1>Welcome back</h1>
-    <p class="auth-copy">Sign in to manage your properties and saved places.</p>
+    <p class="auth-copy">
+      Sign in to save properties, manage listings, and continue exploring
+      PropertyHub.
+    </p>
 
     <label>
       Email
-      <input uiInput type="email" [(ngModel)]="email" name="email" autocomplete="email" required />
+      <input
+        uiInput
+        type="email"
+        [(ngModel)]="email"
+        name="email"
+        autocomplete="email"
+        required
+      />
     </label>
 
     <label>
       Password
-      <input uiInput type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required />
+      <input
+        uiInput
+        type="password"
+        [(ngModel)]="password"
+        name="password"
+        autocomplete="current-password"
+        required
+      />
     </label>
 
     <ui-toast [message]="error()" tone="error" />
 
-    <button uiButton="primary" type="button" (click)="submit()" [disabled]="loading()">
-      {{ loading() ? 'Logging in…' : 'Log in' }}
+    <button
+      uiButton="primary"
+      type="button"
+      (click)="submit()"
+      [disabled]="loading()"
+    >
+      {{ loading() ? "Logging in…" : "Log in" }}
     </button>
 
-    <p class="auth-switch">New to PropertyHub? <a routerLink="/register">Create a business account</a></p>
+    <p class="auth-switch">
+      New to PropertyHub? <a routerLink="/register">Create an account</a>
+    </p>
   </ui-card>
 </main>

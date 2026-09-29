@@ -1,26 +1,39 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../../core/auth/auth.service';
-import { UiButtonDirective } from '../../../shared/ui/button.directive';
-import { UiCardComponent } from '../../../shared/ui/card.component';
-import { UiInputDirective } from '../../../shared/ui/input.directive';
-import { UiToastComponent } from '../../../shared/ui/toast.component';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { Router, RouterLink } from "@angular/router";
+import { AuthService } from "../../../core/auth/auth.service";
+import { UiButtonDirective } from "../../../shared/ui/button.directive";
+import { UiCardComponent } from "../../../shared/ui/card.component";
+import { UiInputDirective } from "../../../shared/ui/input.directive";
+import { UiToastComponent } from "../../../shared/ui/toast.component";
 
 @Component({
-  selector: 'app-login',
+  selector: "app-login",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, UiButtonDirective, UiCardComponent, UiInputDirective, UiToastComponent],
-  templateUrl: './login.component.html',
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    UiButtonDirective,
+    UiCardComponent,
+    UiInputDirective,
+    UiToastComponent,
+  ],
+  templateUrl: "./login.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  email = '';
-  password = '';
+  email = "";
+  password = "";
   readonly error = signal<string | null>(null);
   readonly loading = signal(false);
 
@@ -32,11 +45,17 @@ export class LoginComponent {
         this.auth.storeToken(token);
         const role = this.auth.getRole();
         this.loading.set(false);
-        this.router.navigate([role === 'ADMIN' ? '/admin' : role === 'BUSINESS' ? '/dashboard' : '/properties']);
+        this.router.navigate([
+          role === "ADMIN"
+            ? "/admin"
+            : role === "BUSINESS"
+              ? "/dashboard"
+              : "/properties",
+        ]);
       },
       error: () => {
         this.loading.set(false);
-        this.error.set('Invalid email or password.');
+        this.error.set("Invalid email or password.");
       },
     });
   }

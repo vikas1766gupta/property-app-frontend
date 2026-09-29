@@ -1,10 +1,14 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { BusinessProfile, BusinessProfileUpdate, BusinessPropertySummary } from '../../shared/models/business.model';
+import { Injectable, inject } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Observable } from "rxjs";
+import { environment } from "../../../environments/environment";
+import {
+  BusinessProfile,
+  BusinessProfileUpdate,
+  BusinessPropertySummary,
+} from "../../shared/models/business.model";
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class BusinessService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/businesses`;
@@ -22,6 +26,8 @@ export class BusinessService {
   }
 
   properties(id: string): Observable<BusinessPropertySummary[]> {
-    return this.http.get<BusinessPropertySummary[]>(`${this.baseUrl}/${id}/properties`);
+    return this.http.get<BusinessPropertySummary[]>(
+      `${this.baseUrl}/${id}/properties`,
+    );
   }
 }

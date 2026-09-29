@@ -1,8 +1,8 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, finalize, map, tap, throwError } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { Property } from '../../shared/models/property.model';
+import { Injectable, inject, signal } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Observable, catchError, finalize, map, tap, throwError } from "rxjs";
+import { environment } from "../../../environments/environment";
+import { Property } from "../../shared/models/property.model";
 
 export interface FavoriteRecord {
   id: string;
@@ -16,7 +16,7 @@ export type FavoriteMutationResponse =
   | (FavoriteRecord & { isFavorited: true })
   | { propertyId: string; isFavorited: false };
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class FavoriteService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/favorites`;
@@ -44,17 +44,20 @@ export class FavoriteService {
 
   toggle(property: Property): Observable<void> {
     const propertyId = property.id;
-    if (this.isPending(propertyId)) return throwError(() => new Error('Favorite update already in progress'));
+    if (this.isPending(propertyId))
+      return throwError(() => new Error("Favorite update already in progress"));
 
     const wasFavorited = this.isFavorited(propertyId);
-    const previous = this.favorites().find((favorite) => favorite.propertyId === propertyId);
+    const previous = this.favorites().find(
+      (favorite) => favorite.propertyId === propertyId,
+    );
     this.setPending(propertyId, true);
     if (wasFavorited) {
       this.removeFromState(propertyId);
     } else {
       this.upsertInState({
         id: `optimistic-${propertyId}`,
-        userId: '',
+        userId: "",
         propertyId,
         createdAt: new Date().toISOString(),
         property,
@@ -62,12 +65,18 @@ export class FavoriteService {
     }
 
     const request = wasFavorited
-      ? this.http.delete<FavoriteMutationResponse>(`${this.baseUrl}/${propertyId}`)
-      : this.http.put<FavoriteMutationResponse>(`${this.baseUrl}/${propertyId}`, {});
+      ? this.http.delete<FavoriteMutationResponse>(
+          `${this.baseUrl}/${propertyId}`,
+        )
+      : this.http.put<FavoriteMutationResponse>(
+          `${this.baseUrl}/${propertyId}`,
+          {},
+        );
 
     return request.pipe(
       tap((result) => {
-        if (result.isFavorited && 'property' in result) this.upsertInState(result);
+        if (result.isFavorited && "property" in result)
+          this.upsertInState(result);
         else this.removeFromState(propertyId);
       }),
       map(() => undefined),
@@ -82,7 +91,9 @@ export class FavoriteService {
 
   private replaceFavorites(favorites: FavoriteRecord[]): void {
     this.favorites.set(favorites);
-    this.favoriteIds.set(new Set(favorites.map((favorite) => favorite.propertyId)));
+    this.favoriteIds.set(
+      new Set(favorites.map((favorite) => favorite.propertyId)),
+    );
   }
 
   private upsertInState(favorite: FavoriteRecord): void {
@@ -94,7 +105,9 @@ export class FavoriteService {
   }
 
   private removeFromState(propertyId: string): void {
-    this.favorites.update((favorites) => favorites.filter((favorite) => favorite.propertyId !== propertyId));
+    this.favorites.update((favorites) =>
+      favorites.filter((favorite) => favorite.propertyId !== propertyId),
+    );
     this.favoriteIds.update((ids) => {
       const next = new Set(ids);
       next.delete(propertyId);

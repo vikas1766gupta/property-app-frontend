@@ -1,26 +1,60 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { EMPTY, Subject, catchError, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
-import { PropertyService } from '../../core/services/property.service';
-import { FavoriteService } from '../../core/services/favorite.service';
-import { AuthService } from '../../core/auth/auth.service';
-import { Property, PropertyNotification, PropertySearchFilters, SavedSearch, SavedSearchFilters } from '../../shared/models/property.model';
-import { UiButtonDirective } from '../../shared/ui/button.directive';
-import { UiCardComponent } from '../../shared/ui/card.component';
-import { UiEmptyStateComponent } from '../../shared/ui/empty-state.component';
-import { UiModalComponent } from '../../shared/ui/modal.component';
-import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
-import { UiToastComponent } from '../../shared/ui/toast.component';
-import { MapCenterSelection, PropertyMapComponent } from './property-map.component';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { Router, RouterLink } from "@angular/router";
+import {
+  EMPTY,
+  Subject,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+} from "rxjs";
+import { PropertyService } from "../../core/services/property.service";
+import { FavoriteService } from "../../core/services/favorite.service";
+import { AuthService } from "../../core/auth/auth.service";
+import {
+  Property,
+  PropertyNotification,
+  PropertySearchFilters,
+  SavedSearch,
+  SavedSearchFilters,
+} from "../../shared/models/property.model";
+import { UiButtonDirective } from "../../shared/ui/button.directive";
+import { UiInputDirective } from "../../shared/ui/input.directive";
+import { UiCardComponent } from "../../shared/ui/card.component";
+import { UiEmptyStateComponent } from "../../shared/ui/empty-state.component";
+import { UiModalComponent } from "../../shared/ui/modal.component";
+import { UiSkeletonComponent } from "../../shared/ui/skeleton.component";
+import { UiToastComponent } from "../../shared/ui/toast.component";
+import {
+  MapCenterSelection,
+  PropertyMapComponent,
+} from "./property-map.component";
 
 @Component({
-  selector: 'app-property-listing',
+  selector: "app-property-listing",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, UiButtonDirective, UiCardComponent, UiEmptyStateComponent, UiModalComponent, UiSkeletonComponent, UiToastComponent, PropertyMapComponent],
-  templateUrl: './property-listing.component.html',
-  styleUrl: './property-listing.component.css',
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    UiButtonDirective,
+    UiInputDirective,
+    UiCardComponent,
+    UiEmptyStateComponent,
+    UiModalComponent,
+    UiSkeletonComponent,
+    UiToastComponent,
+    PropertyMapComponent,
+  ],
+  templateUrl: "./property-listing.component.html",
+  styleUrl: "./property-listing.component.css",
   changeDetection: ChangeDetectionStrategy.OnPush, // avoid unnecessary re-renders
 })
 export class PropertyListingComponent {
@@ -42,11 +76,12 @@ export class PropertyListingComponent {
   readonly compareError = signal<string | null>(null);
   readonly savedSearches = signal<SavedSearch[]>([]);
   readonly notifications = signal<PropertyNotification[]>([]);
-  readonly savedSearchName = signal('');
+  readonly savedSearchName = signal("");
   readonly notifyOnMatch = signal(true);
   readonly savedSearchBusy = signal(false);
   readonly savedSearchError = signal<string | null>(null);
   readonly savedSearchMessage = signal<string | null>(null);
+  readonly failedImageKeys = signal<string[]>([]);
   readonly filters: PropertySearchFilters = { page: 1, pageSize: 20 };
 
   private readonly filterChange$ = new Subject<PropertySearchFilters>();
@@ -55,9 +90,12 @@ export class PropertyListingComponent {
   private touchPropertyId: string | null = null;
 
   constructor() {
-    if (this.auth.getRole() === 'BUYER') {
+    if (this.auth.getRole() === "BUYER") {
       this.favoriteService.loadMine().subscribe({
-        error: () => this.favoriteError.set('Saved properties could not be loaded. Try again later.'),
+        error: () =>
+          this.favoriteError.set(
+            "Saved properties could not be loaded. Try again later.",
+          ),
       });
       this.loadBuyerSearchData();
     }
@@ -70,12 +108,16 @@ export class PropertyListingComponent {
         switchMap((filters) => {
           this.loading.set(true);
           this.searchError.set(null);
-          return this.propertyService.search(filters).pipe(catchError(() => {
-            this.searchError.set('Properties could not be loaded. Check your connection and try again.');
-            this.loading.set(false);
-            return EMPTY;
-          }));
-        })
+          return this.propertyService.search(filters).pipe(
+            catchError(() => {
+              this.searchError.set(
+                "Properties could not be loaded. Check your connection and try again.",
+              );
+              this.loading.set(false);
+              return EMPTY;
+            }),
+          );
+        }),
       )
       .subscribe((result) => {
         this.listings.set(result.items);
@@ -93,9 +135,24 @@ export class PropertyListingComponent {
     this.filterChange$.next({ ...this.filters });
   }
 
+  retrySearch(): void {
+    this.onFilterChange();
+  }
+
+  clearFilters(): void {
+    for (const key of Object.keys(this.filters) as Array<
+      keyof PropertySearchFilters
+    >) {
+      if (key !== "page" && key !== "pageSize") delete this.filters[key];
+    }
+    this.selectedCenter.set(null);
+    this.radiusKm.set(10);
+    this.onFilterChange();
+  }
+
   setView(mapMode: boolean): void {
     this.mapMode.set(mapMode);
-    if (mapMode) setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
+    if (mapMode) setTimeout(() => window.dispatchEvent(new Event("resize")), 0);
   }
 
   selectRadius(value: number): void {
@@ -126,7 +183,7 @@ export class PropertyListingComponent {
       return;
     }
     if (current.length >= 3) {
-      this.compareError.set('Compare up to three properties at a time.');
+      this.compareError.set("Compare up to three properties at a time.");
       return;
     }
     this.compareError.set(null);
@@ -139,7 +196,9 @@ export class PropertyListingComponent {
 
   get comparedProperties(): Property[] {
     const ids = this.compareIds();
-    return ids.map((id) => this.listings().find((property) => property.id === id)).filter((property): property is Property => !!property);
+    return ids
+      .map((id) => this.listings().find((property) => property.id === id))
+      .filter((property): property is Property => !!property);
   }
 
   clearCompare(): void {
@@ -148,80 +207,111 @@ export class PropertyListingComponent {
   }
 
   saveCurrentSearch(): void {
-    if (this.auth.getRole() !== 'BUYER' || this.savedSearchBusy()) return;
+    if (this.auth.getRole() !== "BUYER" || this.savedSearchBusy()) return;
     const name = this.savedSearchName().trim();
     if (!name) {
-      this.savedSearchError.set('Enter a name for this saved search.');
+      this.savedSearchError.set("Enter a name for this saved search.");
       return;
     }
 
     const searchFilters = { ...this.filters };
     delete searchFilters.page;
     delete searchFilters.pageSize;
-    const filters = Object.fromEntries(Object.entries(searchFilters).filter(([, value]) => value !== undefined && value !== null && value !== '')) as SavedSearchFilters;
+    const filters = Object.fromEntries(
+      Object.entries(searchFilters).filter(
+        ([, value]) => value !== undefined && value !== null && value !== "",
+      ),
+    ) as SavedSearchFilters;
     if (Object.keys(filters).length === 0) {
-      this.savedSearchError.set('Choose at least one filter before saving a search.');
+      this.savedSearchError.set(
+        "Choose at least one filter before saving a search.",
+      );
       return;
     }
 
     this.savedSearchBusy.set(true);
     this.savedSearchError.set(null);
     this.savedSearchMessage.set(null);
-    this.propertyService.createSavedSearch({
-      name,
-      filters,
-      notifyOnMatch: this.notifyOnMatch(),
-    }).subscribe({
-      next: (savedSearch) => {
-        this.savedSearches.update((searches) => [savedSearch, ...searches]);
-        this.savedSearchName.set('');
-        this.savedSearchMessage.set(this.notifyOnMatch() ? 'Search saved. Matching new listings will appear in alerts.' : 'Search saved.');
-        this.savedSearchBusy.set(false);
-      },
-      error: (error) => {
-        this.savedSearchError.set(error.error?.error || 'Could not save this search.');
-        this.savedSearchBusy.set(false);
-      },
-    });
+    this.propertyService
+      .createSavedSearch({
+        name,
+        filters,
+        notifyOnMatch: this.notifyOnMatch(),
+      })
+      .subscribe({
+        next: (savedSearch) => {
+          this.savedSearches.update((searches) => [savedSearch, ...searches]);
+          this.savedSearchName.set("");
+          this.savedSearchMessage.set(
+            this.notifyOnMatch()
+              ? "Search saved. Matching new listings will appear in alerts."
+              : "Search saved.",
+          );
+          this.savedSearchBusy.set(false);
+        },
+        error: (error) => {
+          this.savedSearchError.set(
+            error.error?.error || "Could not save this search.",
+          );
+          this.savedSearchBusy.set(false);
+        },
+      });
   }
 
   applySavedSearch(savedSearch: SavedSearch): void {
-    for (const key of Object.keys(this.filters) as Array<keyof PropertySearchFilters>) {
-      if (key !== 'page' && key !== 'pageSize') delete this.filters[key];
+    for (const key of Object.keys(this.filters) as Array<
+      keyof PropertySearchFilters
+    >) {
+      if (key !== "page" && key !== "pageSize") delete this.filters[key];
     }
     Object.assign(this.filters, savedSearch.filters, { page: 1, pageSize: 20 });
     const { latitude, longitude, radiusKm } = savedSearch.filters;
     this.radiusKm.set(radiusKm ?? 10);
-    this.selectedCenter.set(latitude !== undefined && longitude !== undefined ? { latitude, longitude } : null);
+    this.selectedCenter.set(
+      latitude !== undefined && longitude !== undefined
+        ? { latitude, longitude }
+        : null,
+    );
     this.onFilterChange();
   }
 
   removeSavedSearch(savedSearch: SavedSearch): void {
     this.propertyService.removeSavedSearch(savedSearch.id).subscribe({
-      next: () => this.savedSearches.update((searches) => searches.filter((item) => item.id !== savedSearch.id)),
-      error: () => this.savedSearchError.set('Could not remove this saved search.'),
+      next: () =>
+        this.savedSearches.update((searches) =>
+          searches.filter((item) => item.id !== savedSearch.id),
+        ),
+      error: () =>
+        this.savedSearchError.set("Could not remove this saved search."),
     });
   }
 
   private loadBuyerSearchData(): void {
     this.propertyService.listSavedSearches().subscribe({
       next: (searches) => this.savedSearches.set(searches),
-      error: () => this.savedSearchError.set('Saved searches could not be loaded.'),
+      error: () =>
+        this.savedSearchError.set("Saved searches could not be loaded."),
     });
     this.propertyService.listNotifications().subscribe({
       next: (notifications) => this.notifications.set(notifications),
-      error: () => this.savedSearchError.set('Search alerts could not be loaded.'),
+      error: () =>
+        this.savedSearchError.set("Search alerts could not be loaded."),
     });
   }
 
   toggleFavorite(property: Property): void {
-    if (this.auth.getRole() !== 'BUYER') {
-      this.router.navigate(['/login'], { queryParams: { returnUrl: '/properties' } });
+    if (this.auth.getRole() !== "BUYER") {
+      this.router.navigate(["/login"], {
+        queryParams: { returnUrl: "/properties" },
+      });
       return;
     }
     this.favoriteError.set(null);
     this.favoriteService.toggle(property).subscribe({
-      error: () => this.favoriteError.set('Could not update saved properties. Your change was rolled back.'),
+      error: () =>
+        this.favoriteError.set(
+          "Could not update saved properties. Your change was rolled back.",
+        ),
     });
   }
 
@@ -235,12 +325,32 @@ export class PropertyListingComponent {
   }
 
   imagesFor(property: Property): string[] {
-    return property.images.length ? property.images : ['assets/placeholder.jpg'];
+    return property.images.length ? property.images : [""];
+  }
+
+  imageKey(property: Property, index: number): string {
+    return `${property.id}:${index}`;
+  }
+
+  isImageFailed(property: Property, index: number): boolean {
+    return (
+      this.failedImageKeys().includes(this.imageKey(property, index)) ||
+      !this.imagesFor(property)[index]
+    );
+  }
+
+  onImageError(property: Property, index: number): void {
+    const key = this.imageKey(property, index);
+    if (!this.failedImageKeys().includes(key))
+      this.failedImageKeys.update((keys) => [...keys, key]);
   }
 
   selectImage(property: Property, index: number): void {
     if (property.images.length < 2) return;
-    this.activeImages.set(property.id, (index + property.images.length) % property.images.length);
+    this.activeImages.set(
+      property.id,
+      (index + property.images.length) % property.images.length,
+    );
   }
 
   previousImage(property: Property): void {
@@ -257,7 +367,8 @@ export class PropertyListingComponent {
   }
 
   onTouchEnd(property: Property, event: TouchEvent): void {
-    if (this.touchPropertyId !== property.id || this.touchStartX === null) return;
+    if (this.touchPropertyId !== property.id || this.touchStartX === null)
+      return;
     const deltaX = event.changedTouches[0].clientX - this.touchStartX;
     this.touchStartX = null;
     this.touchPropertyId = null;

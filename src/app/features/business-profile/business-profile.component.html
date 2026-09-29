@@ -1,50 +1,101 @@
-<ui-skeleton *ngIf="loading()" variant="detail" label="Loading business profile" />
-<ui-empty-state *ngIf="!loading() && error()" mark="⌂" title="Profile unavailable" [description]="error()!" />
+<ui-skeleton
+  *ngIf="loading()"
+  variant="detail"
+  label="Loading business profile"
+/>
+<ui-empty-state
+  *ngIf="!loading() && error()"
+  mark="⌂"
+  title="Profile unavailable"
+  [description]="error()!"
+/>
 
 <main class="profile-page" *ngIf="!loading() && profile() as p">
   <header class="profile-header">
-    <div class="profile-avatar" *ngIf="!p.profileImage">{{ (p.displayName || p.companyName).charAt(0) }}</div>
-    <img *ngIf="p.profileImage" class="profile-image" [src]="p.profileImage" [alt]="p.displayName || p.companyName" />
+    <div class="profile-avatar" *ngIf="!p.profileImage">
+      {{ (p.displayName || p.companyName).charAt(0) }}
+    </div>
+    <img
+      *ngIf="p.profileImage"
+      class="profile-image"
+      [src]="p.profileImage"
+      [alt]="p.displayName || p.companyName"
+    />
     <div>
       <p class="eyebrow">{{ roleLabel }}</p>
       <h1>{{ p.displayName || p.companyName }}</h1>
       <p class="company" *ngIf="p.displayName">{{ p.companyName }}</p>
-      <span class="verified" *ngIf="p.verificationStatus === 'VERIFIED'">Verified business</span>
+      <span class="verified" *ngIf="p.verificationStatus === 'VERIFIED'"
+        >Verified business</span
+      >
     </div>
   </header>
 
   <section class="stats" aria-label="Profile statistics">
-    <div><strong>{{ p.stats.activePropertyCount }}</strong><span>Active listings</span></div>
-    <div *ngIf="p.accountType === 'BROKER'"><strong>{{ p.stats.saleListingsCount }}</strong><span>For sale</span></div>
-    <div *ngIf="p.accountType === 'BROKER'"><strong>{{ p.stats.rentalListingsCount }}</strong><span>For rent</span></div>
-    <div *ngIf="p.accountType === 'BUILDER'"><strong>{{ p.stats.projectsCount }}</strong><span>Projects</span></div>
-    <div *ngIf="p.yearsOfExperience !== null"><strong>{{ p.yearsOfExperience }}</strong><span>Years experience</span></div>
+    <div>
+      <strong>{{ p.stats.activePropertyCount }}</strong
+      ><span>Active listings</span>
+    </div>
+    <div *ngIf="p.accountType === 'BROKER'">
+      <strong>{{ p.stats.saleListingsCount }}</strong
+      ><span>For sale</span>
+    </div>
+    <div *ngIf="p.accountType === 'BROKER'">
+      <strong>{{ p.stats.rentalListingsCount }}</strong
+      ><span>For rent</span>
+    </div>
+    <div *ngIf="p.accountType === 'BUILDER'">
+      <strong>{{ p.stats.projectsCount }}</strong
+      ><span>Projects</span>
+    </div>
+    <div *ngIf="p.yearsOfExperience !== null">
+      <strong>{{ p.yearsOfExperience }}</strong
+      ><span>Years experience</span>
+    </div>
   </section>
 
   <div class="profile-grid">
     <section>
       <h2>About</h2>
-      <p>{{ p.bio || 'This business has not added an introduction yet.' }}</p>
+      <p>{{ p.bio || "This business has not added an introduction yet." }}</p>
       <p *ngIf="p.city"><strong>Based in</strong> {{ p.city }}</p>
-      <p *ngIf="p.servedLocalities.length"><strong>Serves</strong> {{ p.servedLocalities.join(', ') }}</p>
+      <p *ngIf="p.servedLocalities.length">
+        <strong>Serves</strong> {{ p.servedLocalities.join(", ") }}
+      </p>
     </section>
     <ui-card class="contact-card">
       <h2>Contact {{ roleLabel }}</h2>
       <a *ngIf="p.phone" [href]="'tel:' + p.phone">{{ p.phone }}</a>
       <a [href]="'mailto:' + p.email">{{ p.email }}</a>
-      <a *ngIf="p.website" [href]="p.website" target="_blank" rel="noopener">Visit website</a>
+      <a *ngIf="p.website" [href]="p.website" target="_blank" rel="noopener"
+        >Visit website</a
+      >
     </ui-card>
   </div>
 
   <section class="listings-section">
-    <h2>{{ p.accountType === 'BUILDER' ? 'Projects' : 'Active listings' }}</h2>
+    <h2>{{ p.accountType === "BUILDER" ? "Projects" : "Active listings" }}</h2>
     <ui-toast [message]="propertiesError()" tone="error" />
-    <ui-empty-state *ngIf="!propertiesError() && !properties().length" mark="⌂" title="No active listings" description="This profile has no published properties yet." />
+    <ui-empty-state
+      *ngIf="!propertiesError() && !properties().length"
+      mark="⌂"
+      title="No active listings"
+      description="This profile has no published properties yet."
+    />
     <div class="property-grid" *ngIf="properties().length">
       <ui-card *ngFor="let property of properties()">
-        <img class="property-image" [src]="property.images[0] || 'assets/placeholder.jpg'" [alt]="property.title" />
-        <a [routerLink]="['/properties', property.id]" class="property-link">{{ property.title }}</a>
-        <p>{{ property.currency }} {{ property.price | number }} · {{ property.listingType }}</p>
+        <img
+          class="property-image"
+          [src]="property.images[0] || 'assets/placeholder.jpg'"
+          [alt]="property.title"
+        />
+        <a [routerLink]="['/properties', property.id]" class="property-link">{{
+          property.title
+        }}</a>
+        <p>
+          {{ property.currency }} {{ property.price | number }} ·
+          {{ property.listingType }}
+        </p>
         <small>{{ property.city }}, {{ property.state }}</small>
       </ui-card>
     </div>

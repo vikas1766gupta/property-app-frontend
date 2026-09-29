@@ -1,12 +1,30 @@
-<ui-skeleton *ngIf="loading()" variant="detail" label="Loading property details" />
-<ui-empty-state *ngIf="!loading() && propertyError()" mark="⌕" title="Property unavailable" [description]="propertyError()!" />
+<ui-skeleton
+  *ngIf="loading()"
+  variant="detail"
+  label="Loading property details"
+/>
+<ui-empty-state
+  *ngIf="!loading() && propertyError()"
+  mark="⌕"
+  title="Property unavailable"
+  [description]="propertyError()!"
+/>
 
 <div class="detail-page" *ngIf="!loading() && property() as p">
   <div class="gallery">
-    <div class="gallery-stage" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+    <div
+      class="gallery-stage"
+      (touchstart)="onTouchStart($event)"
+      (touchend)="onTouchEnd($event)"
+    >
       <img
         [src]="p.images[activeImage()] || 'assets/placeholder.jpg'"
-        [alt]="p.title + (p.images.length > 1 ? ' — image ' + (activeImage() + 1) + ' of ' + p.images.length : '')"
+        [alt]="
+          p.title +
+          (p.images.length > 1
+            ? ' — image ' + (activeImage() + 1) + ' of ' + p.images.length
+            : '')
+        "
         class="main-image"
       />
       <button
@@ -49,7 +67,10 @@
   </div>
 
   <div class="info">
-    <div class="price">{{ p.currency }} {{ p.price | number }}<span *ngIf="p.listingType === 'RENT'">/mo</span></div>
+    <div class="price">
+      {{ p.currency }} {{ p.price | number
+      }}<span *ngIf="p.listingType === 'RENT'">/mo</span>
+    </div>
     <div class="detail-heading">
       <h1>{{ p.title }}</h1>
       <button
@@ -58,34 +79,90 @@
         class="favorite-toggle"
         *ngIf="auth.getRole() === 'BUYER'"
         [class.is-favorite]="favoriteService.isFavorited(p.id)"
-        [disabled]="favoriteService.isPending(p.id) || favoriteService.loading()"
+        [disabled]="
+          favoriteService.isPending(p.id) || favoriteService.loading()
+        "
         [attr.aria-pressed]="favoriteService.isFavorited(p.id)"
-        [attr.aria-label]="favoriteService.isFavorited(p.id) ? 'Remove ' + p.title + ' from saved properties' : 'Save ' + p.title"
+        [attr.aria-label]="
+          favoriteService.isFavorited(p.id)
+            ? 'Remove ' + p.title + ' from saved properties'
+            : 'Save ' + p.title
+        "
         (click)="toggleFavorite(p)"
-      ><span aria-hidden="true">{{ favoriteService.isFavorited(p.id) ? '♥' : '♡' }}</span></button>
+      >
+        <span aria-hidden="true">{{
+          favoriteService.isFavorited(p.id) ? "♥" : "♡"
+        }}</span>
+      </button>
     </div>
     <ui-toast [message]="favoriteError()" tone="error" />
     <div class="location">{{ p.addressLine }}, {{ p.city }}, {{ p.state }}</div>
 
     <div class="trust-badges" aria-label="Trust status">
-      <span class="verified" *ngIf="listingBadge(p.verificationStatus) as badge">{{ badge }}</span>
-      <span class="verified" *ngIf="p.seller && sellerBadge(p.seller) as badge">{{ badge }}</span>
+      <span
+        class="verified"
+        *ngIf="listingBadge(p.verificationStatus) as badge"
+        >{{ badge }}</span
+      >
+      <span
+        class="verified"
+        *ngIf="p.seller && sellerBadge(p.seller) as badge"
+        >{{ badge }}</span
+      >
     </div>
 
-    <a class="seller-link" *ngIf="p.seller" [routerLink]="['/businesses', p.seller.id]">
-      View {{ p.seller.accountType === 'BROKER' ? 'Broker' : p.seller.accountType === 'BUILDER' ? 'Builder' : 'Seller' }} ·
+    <a
+      class="seller-link"
+      *ngIf="p.seller"
+      [routerLink]="['/businesses', p.seller.id]"
+    >
+      View
+      {{
+        p.seller.accountType === "BROKER"
+          ? "Broker"
+          : p.seller.accountType === "BUILDER"
+            ? "Builder"
+            : "Seller"
+      }}
+      ·
       {{ p.seller.displayName || p.seller.companyName }}
     </a>
 
-    <button uiButton="quiet" type="button" (click)="reportOpen.set(!reportOpen())" *ngIf="!reportSent()">Report this property</button>
+    <button
+      uiButton="quiet"
+      type="button"
+      (click)="reportOpen.set(!reportOpen())"
+      *ngIf="!reportSent()"
+    >
+      Report this property
+    </button>
     <ui-card class="report-form" *ngIf="reportOpen()">
       <h3>Report this property</h3>
-      <select uiInput [ngModel]="reportReason()" (ngModelChange)="reportReason.set($event)">
-        <option value="FAKE_PROPERTY">Fake property</option><option value="WRONG_PRICE">Wrong price</option><option value="DUPLICATE">Duplicate</option><option value="SPAM">Spam</option><option value="SCAM">Scam</option><option value="WRONG_INFORMATION">Wrong information</option><option value="OTHER">Other</option>
+      <select
+        uiInput
+        [ngModel]="reportReason()"
+        (ngModelChange)="reportReason.set($event)"
+      >
+        <option value="FAKE_PROPERTY">Fake property</option>
+        <option value="WRONG_PRICE">Wrong price</option>
+        <option value="DUPLICATE">Duplicate</option>
+        <option value="SPAM">Spam</option>
+        <option value="SCAM">Scam</option>
+        <option value="WRONG_INFORMATION">Wrong information</option>
+        <option value="OTHER">Other</option>
       </select>
-      <textarea uiInput required minlength="5" placeholder="Tell us what is wrong" [ngModel]="reportDescription()" (ngModelChange)="reportDescription.set($event)"></textarea>
+      <textarea
+        uiInput
+        required
+        minlength="5"
+        placeholder="Tell us what is wrong"
+        [ngModel]="reportDescription()"
+        (ngModelChange)="reportDescription.set($event)"
+      ></textarea>
       <ui-toast [message]="reportError()" tone="error" />
-      <button uiButton="primary" type="button" (click)="submitReport()">Submit report</button>
+      <button uiButton="primary" type="button" (click)="submitReport()">
+        Submit report
+      </button>
     </ui-card>
 
     <div class="stats" *ngIf="p.bedrooms || p.areaSqft">
@@ -108,14 +185,44 @@
 
     <ui-card class="lead-form" *ngIf="!leadSent()">
       <h3>Contact the business</h3>
-      <label>Your name<input uiInput type="text" placeholder="Your name" [(ngModel)]="leadName" name="leadName" /></label>
-      <label>Phone or email<input uiInput type="text" placeholder="Phone or email" [(ngModel)]="leadContact" name="leadContact" /></label>
-      <label>Message<textarea uiInput placeholder="I'm interested in this property…" [(ngModel)]="leadMessage" name="leadMessage"></textarea></label>
+      <label
+        >Your name<input
+          uiInput
+          type="text"
+          placeholder="Your name"
+          [(ngModel)]="leadName"
+          name="leadName"
+      /></label>
+      <label
+        >Phone or email<input
+          uiInput
+          type="text"
+          placeholder="Phone or email"
+          [(ngModel)]="leadContact"
+          name="leadContact"
+      /></label>
+      <label
+        >Message<textarea
+          uiInput
+          placeholder="I'm interested in this property…"
+          [(ngModel)]="leadMessage"
+          name="leadMessage"
+        ></textarea>
+      </label>
       <ui-toast [message]="leadError()" tone="error" />
-      <button uiButton="primary" type="button" (click)="submitLead()" [disabled]="leadSubmitting()">
-        {{ leadSubmitting() ? 'Sending…' : 'Send inquiry' }}
+      <button
+        uiButton="primary"
+        type="button"
+        (click)="submitLead()"
+        [disabled]="leadSubmitting()"
+      >
+        {{ leadSubmitting() ? "Sending…" : "Send inquiry" }}
       </button>
     </ui-card>
-    <ui-toast *ngIf="leadSent()" tone="success" message="Your inquiry has been sent to the business." />
+    <ui-toast
+      *ngIf="leadSent()"
+      tone="success"
+      message="Your inquiry has been sent to the business."
+    />
   </div>
 </div>

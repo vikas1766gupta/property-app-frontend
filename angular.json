@@ -30,7 +30,11 @@
           "configurations": {
             "production": {
               "budgets": [
-                { "type": "initial", "maximumWarning": "500kb", "maximumError": "1mb" }
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                }
               ],
               "outputHashing": "all"
             },
@@ -44,8 +48,12 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
-            "production": { "buildTarget": "property-app-frontend:build:production" },
-            "development": { "buildTarget": "property-app-frontend:build:development" }
+            "production": {
+              "buildTarget": "property-app-frontend:build:production"
+            },
+            "development": {
+              "buildTarget": "property-app-frontend:build:development"
+            }
           },
           "defaultConfiguration": "development"
         },

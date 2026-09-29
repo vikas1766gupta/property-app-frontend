@@ -1,13 +1,13 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
-import { Plan } from './subscription.service';
+import { Injectable, inject } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { environment } from "../../../environments/environment";
+import { Plan } from "./subscription.service";
 
 export interface BusinessRecord {
   id: string;
   companyName: string;
   contactPhone: string | null;
-  verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verificationStatus: "PENDING" | "VERIFIED" | "REJECTED";
   user: { email: string };
 }
 
@@ -39,7 +39,7 @@ export interface AdminListingRecord {
 
 export interface ReportRecord {
   id: string;
-  entityType: 'BUSINESS' | 'PROPERTY' | 'PROJECT';
+  entityType: "BUSINESS" | "PROPERTY" | "PROJECT";
   entityId: string;
   reason: string;
   description: string;
@@ -47,7 +47,7 @@ export interface ReportRecord {
   createdAt: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class AdminService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/admin`;
@@ -56,8 +56,20 @@ export class AdminService {
     return this.http.get<BusinessRecord[]>(`${this.baseUrl}/businesses`);
   }
 
-  verifyBusiness(id: string, status: 'PENDING' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED' | 'EXPIRED') {
-    return this.http.patch<BusinessRecord>(`${this.baseUrl}/businesses/${id}/verify`, { status });
+  verifyBusiness(
+    id: string,
+    status:
+      | "PENDING"
+      | "UNDER_REVIEW"
+      | "VERIFIED"
+      | "REJECTED"
+      | "SUSPENDED"
+      | "EXPIRED",
+  ) {
+    return this.http.patch<BusinessRecord>(
+      `${this.baseUrl}/businesses/${id}/verify`,
+      { status },
+    );
   }
 
   listAllListings() {
@@ -65,23 +77,41 @@ export class AdminService {
   }
 
   flagListing(id: string) {
-    return this.http.patch<AdminListingRecord>(`${this.baseUrl}/listings/${id}/flag`, {});
+    return this.http.patch<AdminListingRecord>(
+      `${this.baseUrl}/listings/${id}/flag`,
+      {},
+    );
   }
 
   removeListing(id: string) {
-    return this.http.patch<AdminListingRecord>(`${this.baseUrl}/listings/${id}/remove`, {});
+    return this.http.patch<AdminListingRecord>(
+      `${this.baseUrl}/listings/${id}/remove`,
+      {},
+    );
   }
 
-  listReports() { return this.http.get<ReportRecord[]>(`${this.baseUrl}/reports`); }
+  listReports() {
+    return this.http.get<ReportRecord[]>(`${this.baseUrl}/reports`);
+  }
 
-  moderateReport(id: string, status: 'UNDER_REVIEW' | 'DISMISSED' | 'SUSPENDED' | 'REJECTED' | 'RESOLVED') { return this.http.patch<ReportRecord>(`${this.baseUrl}/reports/${id}`, { status }); }
+  moderateReport(
+    id: string,
+    status:
+      "UNDER_REVIEW" | "DISMISSED" | "SUSPENDED" | "REJECTED" | "RESOLVED",
+  ) {
+    return this.http.patch<ReportRecord>(`${this.baseUrl}/reports/${id}`, {
+      status,
+    });
+  }
 
   revenueReport() {
     return this.http.get<RevenueRow[]>(`${this.baseUrl}/reports/revenue`);
   }
 
   subscriptionReport() {
-    return this.http.get<SubscriptionReportRow[]>(`${this.baseUrl}/reports/subscriptions`);
+    return this.http.get<SubscriptionReportRow[]>(
+      `${this.baseUrl}/reports/subscriptions`,
+    );
   }
 
   getPricing() {
@@ -96,7 +126,7 @@ export class AdminService {
     return this.http.get<Plan[]>(`${this.baseUrl}/plans`);
   }
 
-  createPlan(plan: Omit<Plan, 'id'>) {
+  createPlan(plan: Omit<Plan, "id">) {
     return this.http.post<Plan>(`${this.baseUrl}/plans`, plan);
   }
 

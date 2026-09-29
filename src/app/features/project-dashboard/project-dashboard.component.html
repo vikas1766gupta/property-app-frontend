@@ -1,1 +1,95 @@
-<main class="project-dash"><header><a href="/dashboard">← Business dashboard</a><p class="eyebrow">Builder workspace</p><h1>Projects</h1><p>Track your developments, public visibility, and buyer interest.</p></header><section class="stats"><div><b>{{ projects().length }}</b><span>projects</span></div><div><b>{{ totalViews() }}</b><span>views</span></div><div><b>{{ totalEnquiries() }}</b><span>enquiries</span></div></section><form class="create" (ngSubmit)="create()"><h2>Add a project</h2><input required placeholder="Project name" [(ngModel)]="form.name" name="name"><input required placeholder="Property type" [(ngModel)]="form.propertyType" name="propertyType"><input required placeholder="City" [(ngModel)]="form.city" name="city"><input required placeholder="Locality" [(ngModel)]="form.locality" name="locality"><input required placeholder="Address" [(ngModel)]="form.address" name="address"><input required type="number" min="1" placeholder="Total units" [(ngModel)]="form.totalUnits" name="totalUnits"><input required type="number" min="0" placeholder="Available units" [(ngModel)]="form.availableUnits" name="availableUnits"><textarea required minlength="20" placeholder="Project description" [(ngModel)]="form.description" name="description"></textarea><button [disabled]="creating()" type="submit">{{ creating() ? 'Creating...' : 'Create draft project' }}</button><p class="success" *ngIf="saved()">Draft created.</p><p class="error" *ngIf="error()">{{ error() }}</p></form><section class="project-list"><article *ngFor="let project of projects()"><div><span class="status">{{ project.status }}</span><h2>{{ project.name }}</h2><p>{{ project.locality }}, {{ project.city }}</p></div><div class="metrics"><span><b>{{ project.viewCount }}</b> views</span><span><b>{{ project.enquiriesCount || 0 }}</b> enquiries</span><span><b>{{ project.availableUnits }}</b> available</span></div></article><p *ngIf="!projects().length">No projects yet.</p></section></main>
+<main class="project-dash">
+  <header>
+    <a href="/dashboard">← Business dashboard</a>
+    <p class="eyebrow">Builder workspace</p>
+    <h1>Projects</h1>
+    <p>Track your developments, public visibility, and buyer interest.</p>
+  </header>
+  <section class="stats">
+    <div>
+      <b>{{ projects().length }}</b
+      ><span>projects</span>
+    </div>
+    <div>
+      <b>{{ totalViews() }}</b
+      ><span>views</span>
+    </div>
+    <div>
+      <b>{{ totalEnquiries() }}</b
+      ><span>enquiries</span>
+    </div>
+  </section>
+  <form class="create" (ngSubmit)="create()">
+    <h2>Add a project</h2>
+    <input
+      required
+      placeholder="Project name"
+      [(ngModel)]="form.name"
+      name="name"
+    /><input
+      required
+      placeholder="Property type"
+      [(ngModel)]="form.propertyType"
+      name="propertyType"
+    /><input
+      required
+      placeholder="City"
+      [(ngModel)]="form.city"
+      name="city"
+    /><input
+      required
+      placeholder="Locality"
+      [(ngModel)]="form.locality"
+      name="locality"
+    /><input
+      required
+      placeholder="Address"
+      [(ngModel)]="form.address"
+      name="address"
+    /><input
+      required
+      type="number"
+      min="1"
+      placeholder="Total units"
+      [(ngModel)]="form.totalUnits"
+      name="totalUnits"
+    /><input
+      required
+      type="number"
+      min="0"
+      placeholder="Available units"
+      [(ngModel)]="form.availableUnits"
+      name="availableUnits"
+    /><textarea
+      required
+      minlength="20"
+      placeholder="Project description"
+      [(ngModel)]="form.description"
+      name="description"
+    ></textarea
+    ><button [disabled]="creating()" type="submit">
+      {{ creating() ? "Creating..." : "Create draft project" }}
+    </button>
+    <p class="success" *ngIf="saved()">Draft created.</p>
+    <p class="error" *ngIf="error()">{{ error() }}</p>
+  </form>
+  <section class="project-list">
+    <article *ngFor="let project of projects()">
+      <div>
+        <span class="status">{{ project.status }}</span>
+        <h2>{{ project.name }}</h2>
+        <p>{{ project.locality }}, {{ project.city }}</p>
+      </div>
+      <div class="metrics">
+        <span
+          ><b>{{ project.viewCount }}</b> views</span
+        ><span
+          ><b>{{ project.enquiriesCount || 0 }}</b> enquiries</span
+        ><span
+          ><b>{{ project.availableUnits }}</b> available</span
+        >
+      </div>
+    </article>
+    <p *ngIf="!projects().length">No projects yet.</p>
+  </section>
+</main>

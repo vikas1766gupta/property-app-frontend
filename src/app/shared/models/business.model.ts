@@ -1,5 +1,5 @@
-export type BusinessAccountType = 'OWNER' | 'BROKER' | 'BUILDER';
-export type BusinessVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+export type BusinessAccountType = "OWNER" | "BROKER" | "BUILDER";
+export type BusinessVerificationStatus = "PENDING" | "VERIFIED" | "REJECTED";
 
 export interface BusinessStats {
   activePropertyCount: number;
@@ -32,7 +32,7 @@ export interface BusinessProfile {
 export interface BusinessPropertySummary {
   id: string;
   title: string;
-  listingType: 'RENT' | 'SALE';
+  listingType: "RENT" | "SALE";
   city: string;
   state: string;
   price: number;
@@ -40,4 +40,9 @@ export interface BusinessPropertySummary {
   images: string[];
 }
 
-export type BusinessProfileUpdate = Partial<Omit<BusinessProfile, 'id' | 'email' | 'verificationStatus' | 'stats' | 'createdAt' | 'updatedAt'>>;
+export type BusinessProfileUpdate = Partial<
+  Omit<
+    BusinessProfile,
+    "id" | "email" | "verificationStatus" | "stats" | "createdAt" | "updatedAt"
+  >
+>;

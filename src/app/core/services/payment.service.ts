@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { Injectable, inject } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { environment } from "../../../environments/environment";
 
 export interface PaymentIntentResponse {
   clientSecret: string;
@@ -12,17 +12,19 @@ export interface PaymentRecord {
   propertyId: string | null;
   amount: number;
   currency: string;
-  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED';
+  status: "PENDING" | "SUCCEEDED" | "FAILED" | "REFUNDED";
   createdAt: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class PaymentService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/payments`;
 
   createIntent(propertyId: string) {
-    return this.http.post<PaymentIntentResponse>(`${this.baseUrl}/intent`, { propertyId });
+    return this.http.post<PaymentIntentResponse>(`${this.baseUrl}/intent`, {
+      propertyId,
+    });
   }
 
   history() {

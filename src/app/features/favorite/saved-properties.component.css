@@ -67,7 +67,9 @@
   margin-top: var(--space-2);
 }
 
-.saved-error { color: var(--color-danger); }
+.saved-error {
+  color: var(--color-danger);
+}
 
 @media (max-width: 560px) {
   .saved-page {

@@ -7,31 +7,64 @@
     <a class="browse-link" routerLink="/properties">Browse listings</a>
   </header>
 
-  <ui-skeleton *ngIf="loading()" variant="card" [count]="3" label="Loading saved properties" />
+  <ui-skeleton
+    *ngIf="loading()"
+    variant="card"
+    [count]="3"
+    label="Loading saved properties"
+  />
   <div class="saved-error" *ngIf="error()">
     <ui-toast [message]="error()" tone="error" />
     <button uiButton type="button" (click)="refresh()">Retry</button>
   </div>
-  <ui-empty-state *ngIf="!loading() && !error() && favoriteService.favorites().length === 0"
-    mark="♡" title="No saved properties yet" description="Save a property while browsing and it will be waiting here." />
+  <ui-empty-state
+    *ngIf="!loading() && !error() && favoriteService.favorites().length === 0"
+    mark="♡"
+    title="No saved properties yet"
+    description="Save a property while browsing and it will be waiting here."
+  />
 
-  <div class="saved-grid" *ngIf="!loading() && !error() && favoriteService.favorites().length > 0">
-    <ui-card class="saved-card" *ngFor="let favorite of favoriteService.favorites()">
-      <a class="saved-image" [routerLink]="['/properties', favorite.property.id]">
-        <img [src]="favorite.property.images[0] || 'assets/placeholder.jpg'" [alt]="favorite.property.title" loading="lazy" />
+  <div
+    class="saved-grid"
+    *ngIf="!loading() && !error() && favoriteService.favorites().length > 0"
+  >
+    <ui-card
+      class="saved-card"
+      *ngFor="let favorite of favoriteService.favorites()"
+    >
+      <a
+        class="saved-image"
+        [routerLink]="['/properties', favorite.property.id]"
+      >
+        <img
+          [src]="favorite.property.images[0] || 'assets/placeholder.jpg'"
+          [alt]="favorite.property.title"
+          loading="lazy"
+        />
       </a>
       <div class="saved-content">
-        <div class="saved-price">{{ favorite.property.currency }} {{ favorite.property.price | number }}</div>
-        <a class="saved-title" [routerLink]="['/properties', favorite.property.id]">{{ favorite.property.title }}</a>
+        <div class="saved-price">
+          {{ favorite.property.currency }}
+          {{ favorite.property.price | number }}
+        </div>
+        <a
+          class="saved-title"
+          [routerLink]="['/properties', favorite.property.id]"
+          >{{ favorite.property.title }}</a
+        >
         <p>{{ favorite.property.city }}, {{ favorite.property.state }}</p>
         <button
           uiButton="danger"
           type="button"
           class="remove-favorite"
           [disabled]="favoriteService.isPending(favorite.propertyId)"
-          [attr.aria-label]="'Remove ' + favorite.property.title + ' from saved properties'"
+          [attr.aria-label]="
+            'Remove ' + favorite.property.title + ' from saved properties'
+          "
           (click)="unfavorite(favorite.property)"
-        >Remove saved property</button>
+        >
+          Remove saved property
+        </button>
       </div>
     </ui-card>
   </div>

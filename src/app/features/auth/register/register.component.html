@@ -1,35 +1,88 @@
 <main class="auth-page">
   <ui-card class="auth-form">
-    <p class="eyebrow">LIST YOUR PROPERTY</p>
-    <h1>Build your business presence</h1>
-    <p class="auth-copy">Create an account to publish and manage property listings.</p>
+    <p class="eyebrow">JOIN PROPERTYHUB</p>
+    <h1>Create your account</h1>
+    <p class="auth-copy">Choose how you want to use PropertyHub.</p>
 
-    <label>
+    <div class="account-type-switch" role="group" aria-label="Account type">
+      <button
+        type="button"
+        [class.active]="accountType === 'BUYER'"
+        [attr.aria-pressed]="accountType === 'BUYER'"
+        (click)="accountType = 'BUYER'"
+      >
+        I want to buy or rent
+      </button>
+      <button
+        type="button"
+        [class.active]="accountType === 'BUSINESS'"
+        [attr.aria-pressed]="accountType === 'BUSINESS'"
+        (click)="accountType = 'BUSINESS'"
+      >
+        I want to list properties
+      </button>
+    </div>
+
+    <label *ngIf="accountType === 'BUSINESS'">
       Company name
-      <input uiInput type="text" [(ngModel)]="companyName" name="companyName" autocomplete="organization" required />
+      <input
+        uiInput
+        type="text"
+        [(ngModel)]="companyName"
+        name="companyName"
+        autocomplete="organization"
+        required
+      />
     </label>
 
     <label>
       Email
-      <input uiInput type="email" [(ngModel)]="email" name="email" autocomplete="email" required />
+      <input
+        uiInput
+        type="email"
+        [(ngModel)]="email"
+        name="email"
+        autocomplete="email"
+        required
+      />
     </label>
 
-    <label>
+    <label *ngIf="accountType === 'BUSINESS'">
       Phone (optional)
-      <input uiInput type="tel" [(ngModel)]="contactPhone" name="contactPhone" autocomplete="tel" />
+      <input
+        uiInput
+        type="tel"
+        [(ngModel)]="contactPhone"
+        name="contactPhone"
+        autocomplete="tel"
+      />
     </label>
 
     <label>
       Password
-      <input uiInput type="password" [(ngModel)]="password" name="password" autocomplete="new-password" required />
+      <input
+        uiInput
+        type="password"
+        [(ngModel)]="password"
+        name="password"
+        autocomplete="new-password"
+        required
+      />
     </label>
 
     <ui-toast [message]="error()" tone="error" />
 
-    <button uiButton="primary" type="button" (click)="submit()" [disabled]="loading()">
-      {{ loading() ? 'Creating account…' : 'Create account' }}
+    <button
+      uiButton="primary"
+      type="button"
+      (click)="submit()"
+      [disabled]="loading()"
+    >
+      {{ loading() ? "Creating account…" : "Create account" }}
     </button>
 
-    <p class="auth-switch">Already registered? <a routerLink="/login">Log in</a></p>
+    <p class="auth-switch">
+      Already registered? <a routerLink="/login">Log in</a>
+    </p>
   </ui-card>
 </main>

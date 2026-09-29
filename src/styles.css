@@ -44,8 +44,8 @@
   --text-xl: 1.75rem;
   --text-2xl: 2.25rem;
 
-  --font-body: 'Google Sans', 'DM Sans', 'Segoe UI', sans-serif;
-  --font-display: 'Google Sans', 'DM Sans', 'Segoe UI', sans-serif;
+  --font-body: "Google Sans", "DM Sans", "Segoe UI", sans-serif;
+  --font-display: "Google Sans", "DM Sans", "Segoe UI", sans-serif;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
@@ -110,7 +110,11 @@ textarea {
   font-weight: 650;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
 }
 
 .ui-button:hover:not(:disabled),
@@ -275,7 +279,9 @@ textarea::placeholder {
   font-weight: 600;
 }
 
-.checkout-box { padding: var(--space-6); }
+.checkout-box {
+  padding: var(--space-6);
+}
 
 .error,
 .form-error,
@@ -385,11 +391,16 @@ th {
   text-decoration: none;
 }
 
-.property-map-popup span { color: var(--color-brand-strong); font-weight: 700; }
+.property-map-popup span {
+  color: var(--color-brand-strong);
+  font-weight: 700;
+}
 
 .marker-cluster-small,
 .marker-cluster-medium,
-.marker-cluster-large { background-color: rgb(23 107 82 / 24%); }
+.marker-cluster-large {
+  background-color: rgb(23 107 82 / 24%);
+}
 
 .marker-cluster-small div,
 .marker-cluster-medium div,

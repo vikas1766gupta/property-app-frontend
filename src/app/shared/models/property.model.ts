@@ -1,6 +1,13 @@
-export type ListingType = 'RENT' | 'SALE';
-export type ListingStatus = 'DRAFT' | 'PENDING_PAYMENT' | 'PUBLISHED' | 'FLAGGED' | 'REMOVED';
-export type VerificationStatus = 'PENDING' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED' | 'EXPIRED';
+export type ListingType = "RENT" | "SALE";
+export type ListingStatus =
+  "DRAFT" | "PENDING_PAYMENT" | "PUBLISHED" | "FLAGGED" | "REMOVED";
+export type VerificationStatus =
+  | "PENDING"
+  | "UNDER_REVIEW"
+  | "VERIFIED"
+  | "REJECTED"
+  | "SUSPENDED"
+  | "EXPIRED";
 
 export interface PropertyImageReference {
   id: string;
@@ -16,10 +23,10 @@ export interface PropertyImageInput {
 
 export interface PropertySellerSummary {
   id: string;
-  accountType: 'OWNER' | 'BROKER' | 'BUILDER';
+  accountType: "OWNER" | "BROKER" | "BUILDER";
   displayName: string | null;
   companyName: string;
-  verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verificationStatus: "PENDING" | "VERIFIED" | "REJECTED";
 }
 
 export interface Property {
@@ -64,7 +71,10 @@ export interface PropertySearchFilters {
   pageSize?: number;
 }
 
-export type SavedSearchFilters = Omit<PropertySearchFilters, 'page' | 'pageSize'>;
+export type SavedSearchFilters = Omit<
+  PropertySearchFilters,
+  "page" | "pageSize"
+>;
 
 export interface SavedSearch {
   id: string;

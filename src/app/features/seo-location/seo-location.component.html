@@ -1,5 +1,11 @@
-<main class="location-page" *ngIf="!loading() && page() as location; else state">
-  <nav class="breadcrumbs" aria-label="Breadcrumb"><a routerLink="/properties">Properties</a><span>/</span><span>{{ location.name }}</span></nav>
+<main
+  class="location-page"
+  *ngIf="!loading() && page() as location; else state"
+>
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a routerLink="/properties">Properties</a><span>/</span
+    ><span>{{ location.name }}</span>
+  </nav>
   <header class="location-header">
     <p class="eyebrow">Punjab and Chandigarh Tricity</p>
     <h1>{{ location.title }}</h1>
@@ -7,23 +13,63 @@
   </header>
 
   <section class="summary" aria-label="Location property summary">
-    <div><strong>{{ location.total }}</strong><span>active listings</span></div>
-    <div><strong>{{ location.averagePrice ? (location.averagePrice | number) : '—' }}</strong><span>average listed price</span></div>
-    <div><strong>{{ location.priceMin && location.priceMax ? (location.priceMin | number) + '–' + (location.priceMax | number) : '—' }}</strong><span>listed price range</span></div>
+    <div>
+      <strong>{{ location.total }}</strong
+      ><span>active listings</span>
+    </div>
+    <div>
+      <strong>{{
+        location.averagePrice ? (location.averagePrice | number) : "—"
+      }}</strong
+      ><span>average listed price</span>
+    </div>
+    <div>
+      <strong>{{
+        location.priceMin && location.priceMax
+          ? (location.priceMin | number) + "–" + (location.priceMax | number)
+          : "—"
+      }}</strong
+      ><span>listed price range</span>
+    </div>
   </section>
 
   <section class="content-section" *ngIf="location.total > 0; else noInventory">
-    <div class="section-heading"><h2>Available properties in {{ location.name }}</h2><a [routerLink]="['/properties']" [queryParams]="{ city: location.name }">View all filters</a></div>
+    <div class="section-heading">
+      <h2>Available properties in {{ location.name }}</h2>
+      <a [routerLink]="['/properties']" [queryParams]="{ city: location.name }"
+        >View all filters</a
+      >
+    </div>
     <div class="listing-grid">
-      <a class="listing" *ngFor="let listing of location.listings" [routerLink]="['/properties', listing.id]">
-        <span class="listing-type">{{ listing.listingType }}</span><h3>{{ listing.title }}</h3><p>{{ listing.city }}</p><strong>{{ listing.currency }} {{ listing.price | number }}</strong>
+      <a
+        class="listing"
+        *ngFor="let listing of location.listings"
+        [routerLink]="['/properties', listing.id]"
+      >
+        <span class="listing-type">{{ listing.listingType }}</span>
+        <h3>{{ listing.title }}</h3>
+        <p>{{ listing.city }}</p>
+        <strong>{{ listing.currency }} {{ listing.price | number }}</strong>
       </a>
     </div>
   </section>
-  <ng-template #noInventory><p class="empty">There are no active listings matching this location page yet.</p></ng-template>
+  <ng-template #noInventory
+    ><p class="empty">
+      There are no active listings matching this location page yet.
+    </p></ng-template
+  >
 
   <section class="content-section" *ngIf="location.popularPropertyTypes.length">
-    <h2>Popular property types</h2><p>{{ location.popularPropertyTypes[0].type }} listings are currently the most common in this area.</p>
+    <h2>Popular property types</h2>
+    <p>
+      {{ location.popularPropertyTypes[0].type }} listings are currently the
+      most common in this area.
+    </p>
   </section>
 </main>
-<ng-template #state><main class="location-page state"><p *ngIf="loading()">Loading location listings…</p><p *ngIf="!loading() && error()">This location page is not available.</p></main></ng-template>
+<ng-template #state
+  ><main class="location-page state">
+    <p *ngIf="loading()">Loading location listings…</p>
+    <p *ngIf="!loading() && error()">This location page is not available.</p>
+  </main></ng-template
+>

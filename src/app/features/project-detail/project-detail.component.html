@@ -1,1 +1,94 @@
-<main class="detail" *ngIf="project() as project; else failed"><a routerLink="/projects">← All projects</a><div class="hero"><img *ngIf="project.media[0] as image" [src]="image.url" [alt]="project.name"><div><p class="eyebrow">{{ project.verificationStatus === 'VERIFIED' ? 'Verified project' : 'Builder project' }}</p><h1>{{ project.name }}</h1><p>{{ project.locality }}, {{ project.city }}</p><p>{{ project.description }}</p><div class="facts"><span><b>{{ project.availableUnits }}</b> available homes</span><span><b>{{ project.totalUnits }}</b> total homes</span><span><b>{{ project.viewCount }}</b> views</span></div></div></div><section class="content"><div><h2>Project details</h2><p>{{ project.address }}</p><p>Possession: {{ project.possessionDate ? (project.possessionDate | date:'mediumDate') : 'To be announced' }}</p><p *ngIf="project.reraNumber">RERA: {{ project.reraNumber }} ({{ project.reraStatus }})</p><p *ngIf="project.priceFrom">Price from {{ project.priceFrom | currency:'INR':'symbol':'1.0-0' }}</p><h3>Amenities</h3><span class="amenity" *ngFor="let amenity of project.amenities">{{ amenity }}</span></div><form class="enquiry" (ngSubmit)="submit()"><h2>Ask about this project</h2><p *ngIf="sent()" class="success">Enquiry sent. The builder will contact you.</p><ng-container *ngIf="!sent()"><input required placeholder="Your name" [(ngModel)]="enquiry.name" name="name"><input required placeholder="Phone or email" [(ngModel)]="enquiry.contact" name="contact"><textarea required rows="5" placeholder="What would you like to know?" [(ngModel)]="enquiry.message" name="message"></textarea><button type="submit">Send enquiry</button></ng-container></form></section><section class="similar" *ngIf="similar().length"><h2>More in {{ project.city }}</h2><a *ngFor="let item of similar()" [routerLink]="['/projects', item.slug]">{{ item.name }} · {{ item.locality }}</a></section></main><ng-template #failed><main class="detail"><p>{{ error() || 'Loading project...' }}</p><a routerLink="/projects">Browse projects</a></main></ng-template>
+<main class="detail" *ngIf="project() as project; else failed">
+  <a routerLink="/projects">← All projects</a>
+  <div class="hero">
+    <img
+      *ngIf="project.media[0] as image"
+      [src]="image.url"
+      [alt]="project.name"
+    />
+    <div>
+      <p class="eyebrow">
+        {{
+          project.verificationStatus === "VERIFIED"
+            ? "Verified project"
+            : "Builder project"
+        }}
+      </p>
+      <h1>{{ project.name }}</h1>
+      <p>{{ project.locality }}, {{ project.city }}</p>
+      <p>{{ project.description }}</p>
+      <div class="facts">
+        <span
+          ><b>{{ project.availableUnits }}</b> available homes</span
+        ><span
+          ><b>{{ project.totalUnits }}</b> total homes</span
+        ><span
+          ><b>{{ project.viewCount }}</b> views</span
+        >
+      </div>
+    </div>
+  </div>
+  <section class="content">
+    <div>
+      <h2>Project details</h2>
+      <p>{{ project.address }}</p>
+      <p>
+        Possession:
+        {{
+          project.possessionDate
+            ? (project.possessionDate | date: "mediumDate")
+            : "To be announced"
+        }}
+      </p>
+      <p *ngIf="project.reraNumber">
+        RERA: {{ project.reraNumber }} ({{ project.reraStatus }})
+      </p>
+      <p *ngIf="project.priceFrom">
+        Price from
+        {{ project.priceFrom | currency: "INR" : "symbol" : "1.0-0" }}
+      </p>
+      <h3>Amenities</h3>
+      <span class="amenity" *ngFor="let amenity of project.amenities">{{
+        amenity
+      }}</span>
+    </div>
+    <form class="enquiry" (ngSubmit)="submit()">
+      <h2>Ask about this project</h2>
+      <p *ngIf="sent()" class="success">
+        Enquiry sent. The builder will contact you.
+      </p>
+      <ng-container *ngIf="!sent()"
+        ><input
+          required
+          placeholder="Your name"
+          [(ngModel)]="enquiry.name"
+          name="name"
+        /><input
+          required
+          placeholder="Phone or email"
+          [(ngModel)]="enquiry.contact"
+          name="contact"
+        /><textarea
+          required
+          rows="5"
+          placeholder="What would you like to know?"
+          [(ngModel)]="enquiry.message"
+          name="message"
+        ></textarea
+        ><button type="submit">Send enquiry</button></ng-container
+      >
+    </form>
+  </section>
+  <section class="similar" *ngIf="similar().length">
+    <h2>More in {{ project.city }}</h2>
+    <a *ngFor="let item of similar()" [routerLink]="['/projects', item.slug]"
+      >{{ item.name }} · {{ item.locality }}</a
+    >
+  </section>
+</main>
+<ng-template #failed
+  ><main class="detail">
+    <p>{{ error() || "Loading project..." }}</p>
+    <a routerLink="/projects">Browse projects</a>
+  </main></ng-template
+>
